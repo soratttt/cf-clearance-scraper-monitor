@@ -67,4 +67,21 @@ app.post('/cf-clearance-scraper', async (req, res) => {
 
 app.use((req, res) => { res.status(404).json({ code: 404, message: 'Not Found' }) })
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+app.use((err, req, res, next) => {
+  console.error('Express error handler:', err);
+  res.status(500).json({
+    code: 500,
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 if (process.env.NODE_ENV == 'development') module.exports = app
