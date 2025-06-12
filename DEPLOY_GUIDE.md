@@ -1,49 +1,52 @@
-# 一键部署指南
+# 🚀 一键部署指南
 
-CF Clearance Scraper 支持 Mac 和 Windows 系统的一键部署，无需手动安装任何依赖。
+CF Clearance Scraper 提供傻瓜式一键部署，支持 Mac 和 Windows 系统，完全零配置。
 
 ## 🍎 Mac 系统部署
 
-### 方法一：双击运行（推荐）
-1. 双击 `deploy-mac.command` 文件
-2. 如果提示"无法打开"，右键点击 → "打开" → 确认
-3. 等待自动安装完成并启动服务
+### 🎯 超简单部署（推荐）
+1. 双击 **`一键部署-MAC.command`** 文件
+2. 如果提示"无法打开"，右键点击 → "打开" → 确认运行
+3. 自动完成：Homebrew安装 → Node.js安装 → 依赖安装 → 服务启动
+4. 看到服务地址后即可使用
 
-### 方法二：终端运行
+### ⚡ 终端运行
 ```bash
-chmod +x deploy-mac.command
-./deploy-mac.command
+chmod +x "一键部署-MAC.command"
+./"一键部署-MAC.command"
 ```
 
 ## 🪟 Windows 系统部署
 
-### 方法一：双击运行（推荐）
-1. 双击 `deploy-windows.bat` 文件
+### 🎯 超简单部署（推荐）
+1. 双击 **`一键部署-WIN.bat`** 文件
 2. 如果弹出安全警告，选择"仍要运行"
 3. 建议"以管理员身份运行"以获得最佳体验
-4. 等待自动安装完成并启动服务
+4. 自动完成：Node.js检查 → 依赖安装 → 防火墙配置 → 服务启动
+5. 看到服务地址后即可使用
 
-### 方法二：命令行运行
+### ⚡ 命令行运行
 ```cmd
-deploy-windows.bat
+"一键部署-WIN.bat"
 ```
 
-## 📝 部署说明
+## 📋 部署说明
 
-### 自动安装内容
-- **Mac**: 自动安装 Homebrew、Node.js、项目依赖
-- **Windows**: 自动安装 Chocolatey、Node.js、项目依赖
+### 🔧 自动安装内容
+- **Mac**: Homebrew → Node.js → 项目依赖 → 环境配置
+- **Windows**: Node.js检查 → 项目依赖 → 防火墙配置 → 服务启动
 
-### 服务地址
-部署成功后，可通过以下地址访问：
-- 本地访问: `http://localhost:3000`
-- 监控面板: `http://localhost:3000/monitor` 
-- 局域网访问: `http://[你的IP]:3000`
+### 🌐 服务地址
+部署成功后，脚本会自动显示访问地址：
+- **本地访问**: `http://localhost:3000`
+- **监控面板**: `http://localhost:3000/monitor` 
+- **局域网访问**: `http://[自动获取的IP]:3000`
 
-### API 端点
-- 原始格式: `POST /cf-clearance-scraper`
-- 新版格式: `POST /cftoken`
-- 监控 API: `GET /api/monitor`
+### 🔗 API 端点
+- **旧版格式**: `POST /cf-clearance-scraper`
+- **新版格式**: `POST /cftoken`
+- **监控接口**: `GET /api/monitor`
+- **健康检查**: `GET /health`
 
 ## 🔧 故障排除
 

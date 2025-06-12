@@ -12,22 +12,22 @@
 
 ## 🚀 一键部署（推荐）
 
-### Mac 系统
-双击运行 `deploy-mac.command` 即可自动安装所有依赖并启动服务
+### 📱 Mac 系统
+双击运行 **`一键部署-MAC.command`** 即可自动安装所有依赖并启动服务
 
-### Windows 系统  
-双击运行 `deploy-windows.bat` 即可自动安装所有依赖并启动服务
+### 🖥️ Windows 系统  
+双击运行 **`一键部署-WIN.bat`** 即可自动安装所有依赖并启动服务
 
-### 部署说明
-- ✅ 自动安装 Node.js、npm 和所有依赖
-- ✅ 自动配置防火墙和局域网访问  
-- ✅ 支持本地和局域网部署
-- ✅ 零配置，开箱即用
-- 📖 详细说明请查看 [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md)
+### ✨ 部署特性
+- 🔧 **全自动安装** - Node.js、npm、项目依赖一键搞定
+- 🛡️ **智能配置** - 自动配置防火墙和网络访问权限
+- 🌐 **局域网支持** - 自动获取IP，支持多设备访问
+- ⚡ **零配置启动** - 双击即用，无需任何手动配置
+- 📋 **详细日志** - 安装过程可视化，问题一目了然
 
-### 快速启动（已部署用户）
-- Mac: 双击 `start-mac.command`
-- Windows: 双击 `start-windows.bat`
+### 🎯 快速启动（已部署用户）
+- **Mac**: 双击 `start-mac.command`
+- **Windows**: 双击 `start-windows.bat`
 
 ## 手动安装与运行
 
@@ -71,18 +71,20 @@ PORT=3000 browserLimit=100 node src/index.js
 
 ## API 使用
 
-### API 端点
+### 🔗 API 端点
 
-本服务支持两种API格式：
+本服务支持两种API格式，完全兼容：
 
-#### 格式一
-- 端点: `POST /cf-clearance-scraper`
-- 参数: `url`, `siteKey`, `mode`
+#### 📡 格式一
+- **端点**: `POST /cf-clearance-scraper`
+- **参数**: `url`, `siteKey`, `mode`
+- **特性**: 支持代理配置，完整功能
 
-#### 格式二
-- 端点: `POST /cftoken` 
-- 参数: `type: "cftoken"`, `websiteUrl`, `websiteKey`
-- 响应: `{code: 200, message: "success", token: "xxx"}`
+#### 🆕 格式二
+- **端点**: `POST /cftoken` 
+- **参数**: `type: "cftoken"`, `websiteUrl`, `websiteKey`
+- **响应**: `{code: 200, message: "success", token: "xxx"}`
+- **特性**: 标准化响应格式，更易集成
 
 ### 1. 获取页面源码
 
