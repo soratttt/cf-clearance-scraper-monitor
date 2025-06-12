@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare 本地打码看板</title>
+    <link rel="icon" href="https://dash.cloudflare.com/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><img src="https://dash.cloudflare.com/favicon.ico" alt="Cloudflare" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;">Cloudflare 本地打码看板</h1>
+        </div>
+
+        <div class="dashboard">
+            <!-- 服务状态卡片 -->
+            <div class="card">
+                <h3><span class="icon">🟢</span>服务状态</h3>
+                <div id="serviceStatus" class="loading">加载中...</div>
+            </div>
+
+            <!-- 实例信息卡片 -->
+            <div class="card">
+                <h3><span class="icon">🖥️</span>实例信息</h3>
+                <div id="instanceInfo" class="loading">加载中...</div>
+            </div>
+
+            <!-- 请求统计卡片 -->
+            <div class="card">
+                <h3><span class="icon">📊</span>请求统计</h3>
+                <div id="requestStats" class="loading">加载中...</div>
+            </div>
+
+            <!-- 内存信息卡片 -->
+            <div class="card">
+                <h3><span class="icon">💾</span>内存信息</h3>
+                <div id="memoryInfo" class="loading">加载中...</div>
+            </div>
+
+            <!-- 负载历史图表 -->
+            <div class="card load-history-card" style="grid-column: 1 / -1;">
+                <h3>
+                    <span class="icon">📊</span>负载历史
+                    <span class="live-indicator">实时 1s</span>
+                </h3>
+                <div class="metrics-summary" id="metricsSummary" style="display: flex; gap: 20px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <div class="metric-item">
+                        <span class="metric-label">当前活跃</span>
+                        <span class="metric-value" id="currentActive">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">峰值并发</span>
+                        <span class="metric-value" id="peakConcurrent">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">平均负载</span>
+                        <span class="metric-value" id="avgLoad">0.0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">总容量</span>
+                        <span class="metric-value" id="totalCapacity">100</span>
+                    </div>
+                </div>
+                <div class="chart-container load-chart-container">
+                    <canvas id="loadHistoryChart" class="chart-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 请求历史与实时状态 -->
+        <div class="table-container">
+            <h3>
+                <span class="icon">📋</span>请求记录与实时状态 
+                <button class="btn" onclick="resetMonitorData()">重置数据</button>
+                <span class="live-indicator">实时更新</span>
+            </h3>
+            <div id="unifiedRequestTable" class="loading">加载中...</div>
+        </div>
+
+        <div class="footer">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 30px;">
+                <span>
+                    Designed by <a href="https://x.com/Johnze268" target="_blank">
+                        <img src="https://abs.twimg.com/favicons/twitter.2.ico" alt="Twitter"> 0xsongsu
+                    </a>
+                </span>
+                <span>
+                    Powered by <a href="https://claude.ai" target="_blank">
+                        <img src="https://claude.ai/favicon.ico" alt="Claude">
+                    </a>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="charts.js"></script>
+    <script>
+        let updateInterval;
+        let loadChart = null;
+        let loadHistory = [];
+        let peakConcurrent = 0;
+        
+        // 初始化图表
+        function initCharts() {
+            const canvas = document.getElementById('loadHistoryChart');
+            if (canvas) {
+                loadChart = new LoadHistoryChart(canvas, {
+                    backgroundColor: '#f8f9fa',
+                    fillColor: 'rgba(52, 144, 220, 0.2)',
+                    lineColor: 'rgba(52, 144, 220, 1)',
+                    lineWidth: 2,
+                    maxDataPoints: 60
+                });
+            }
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleString('zh-CN');
+        }
+
+        // 格式化持续时间
+        function formatDuration(ms) {
+            if (ms < 1000) return `${ms}ms`;
+            if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+            if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
+            return `${(ms / 3600000).toFixed(1)}h`;
+        }
+
+        // 格式化内存大小
+        function formatMemory(mb) {
+            if (mb < 1024) return `${mb}MB`;
+            return `${(mb / 1024).toFixed(1)}GB`;
+        }
+
+        // 获取监控数据
+        async function fetchMonitorData() {
+            try {
+                let response = await fetch('/api/monitor');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateDashboard(data);
+                
+            } catch (error) {
+                console.error('获取监控数据失败:', error);
+                showError('获取监控数据失败: ' + error.message);
+            }
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            
+            // 在每个loading元素中显示错误
+            document.querySelectorAll('.loading').forEach(element => {
+                element.innerHTML = '';
+                element.appendChild(errorDiv.cloneNode(true));
+            });
+        }
+
+        // 更新仪表板
+        function updateDashboard(data) {
+            updateServiceStatus(data);
+            updateInstanceInfo(data);
+            updateRequestStats(data);
+            updateMemoryInfo(data);
+            updateUnifiedRequestTable(data);
+            updateLoadMetrics(data);
+            updateCharts(data);
+        }
+
+        // 更新服务状态
+        function updateServiceStatus(data) {
+            const element = document.getElementById('serviceStatus');
+            const uptime = formatDuration(data.uptime);
+            const startTime = formatTime(data.startTime);
+            
+            element.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">
+                            <span class="status-indicator status-running"></span>
+                            运行中
+                        </div>
+                        <div class="stat-label">服务状态</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${uptime}</div>
+                        <div class="stat-label">运行时间</div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9rem; color: #7f8c8d;">
+                    启动时间: ${startTime}
+                </div>
+            `;
+        }
+
+        // 更新实例信息
+        function updateInstanceInfo(data) {
+            const element = document.getElementById('instanceInfo');
+            const usagePercent = data.instances.total > 0 ? 
+                (data.instances.active / data.instances.total * 100).toFixed(1) : 0;
+            
+            let instanceDetailsHtml = '';
+            
+            // 显示各个容器的详细信息（如果有多容器部署）
+            if (data.containers && data.containers.length > 0) {
+                instanceDetailsHtml = `
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #34495e;">容器详情</h4>
+                        ${data.containers.map(container => `
+                            <div style="margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px; font-size: 0.8rem;">
+                                <strong>${container.host}</strong>
+                                <span style="float: right;">
+                                    <span class="status-indicator status-running"></span>
+                                    ${container.instances.total}实例 (${container.instances.active}活跃/${container.instances.available}空闲)
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // 显示浏览器实例池详情
+            let browserPoolHtml = '';
+            if (data.browserPoolDetails && data.browserPoolDetails.length > 0) {
+                browserPoolHtml = `
+                    <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #34495e;">浏览器实例池</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                            ${data.browserPoolDetails.map(instance => `
+                                <div style="padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px; text-align: center; font-size: 0.75rem;">
+                                    <div style="font-weight: bold;">实例 #${instance.id}</div>
+                                    <div style="margin: 2px 0;">
+                                        <span class="status-indicator ${instance.status === 'idle' ? 'status-running' : 'status-warning'}"></span>
+                                        ${instance.status === 'idle' ? '空闲' : '忙碌'}
+                                    </div>
+                                    <div style="color: #7f8c8d; font-size: 0.7rem;">
+                                        上下文: ${instance.contexts || 0}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            element.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${data.instances.total}</div>
+                        <div class="stat-label">总实例数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.instances.active}</div>
+                        <div class="stat-label">忙碌实例</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.instances.available}</div>
+                        <div class="stat-label">空闲实例</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.browserContexts || 0}</div>
+                        <div class="stat-label">浏览器实例</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${usagePercent}%"></div>
+                </div>
+                <div style="text-align: center; margin-top: 5px; font-size: 0.9rem; color: #7f8c8d;">
+                    使用率: ${usagePercent}%
+                </div>
+                ${instanceDetailsHtml}
+                ${browserPoolHtml}
+            `;
+        }
+
+        // 更新请求统计
+        function updateRequestStats(data) {
+            const element = document.getElementById('requestStats');
+            
+            element.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${data.requests.total}</div>
+                        <div class="stat-label">总请求数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.requests.successful}</div>
+                        <div class="stat-label">成功请求</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.requests.failed}</div>
+                        <div class="stat-label">失败请求</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.requests.active}</div>
+                        <div class="stat-label">活跃请求</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <strong>成功率: ${data.requests.successRate}%</strong>
+                </div>
+            `;
+        }
+
+        // 更新内存信息
+        function updateMemoryInfo(data) {
+            const element = document.getElementById('memoryInfo');
+            const memory = data.memory;
+            
+            element.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${memory.process.heapUsed}</div>
+                        <div class="stat-label">堆内存使用</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${memory.process.rss}</div>
+                        <div class="stat-label">RSS内存</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${formatMemory(memory.system.used)}</div>
+                        <div class="stat-label">系统已用</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${formatMemory(memory.system.free)}</div>
+                        <div class="stat-label">系统可用</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 截断token显示
+        function truncateToken(token, maxLength = 30) {
+            if (!token || token.length <= maxLength) return token || '';
+            return token.substring(0, maxLength) + '...';
+        }
+
+        // 更新统一请求表格
+        function updateUnifiedRequestTable(data) {
+            const element = document.getElementById('unifiedRequestTable');
+            const allRequests = [];
+            
+            // 添加活跃请求（处理中状态）
+            data.activeRequests.forEach(req => {
+                allRequests.push({
+                    timestamp: req.startTime,
+                    url: req.url,
+                    mode: req.mode,
+                    status: 'processing',
+                    token: '',
+                    responseTime: Date.now() - new Date(req.startTime).getTime(),
+                    isActive: true,
+                    requestId: req.id,
+                    clientIP: req.clientIP
+                });
+            });
+            
+            // 添加请求历史（已完成/失败状态）
+            data.requestHistory.forEach(req => {
+                // 查找对应的token
+                const matchingToken = data.recentTokens.find(token => 
+                    token.requestId === req.requestId || 
+                    (token.url === req.url && Math.abs(new Date(token.timestamp).getTime() - new Date(req.timestamp).getTime()) < 5000)
+                );
+                
+                allRequests.push({
+                    timestamp: req.timestamp,
+                    url: req.url,
+                    mode: req.mode,
+                    status: req.success ? 'completed' : 'failed',
+                    token: matchingToken ? matchingToken.token : '',
+                    responseTime: req.responseTime,
+                    isActive: false,
+                    requestId: req.requestId
+                });
+            });
+            
+            // 按时间倒序排列
+            allRequests.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (allRequests.length === 0) {
+                element.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">暂无请求记录</p>';
+                return;
+            }
+            
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">时间</th>
+                            <th style="min-width: 200px;">URL</th>
+                            <th style="width: 80px;">状态</th>
+                            <th style="width: 120px;">Token</th>
+                            <th style="width: 100px;">响应时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allRequests.slice(0, 50).map(req => {
+                            let statusDisplay = '';
+                            let statusClass = '';
+                            
+                            switch(req.status) {
+                                case 'processing':
+                                    statusDisplay = '处理中';
+                                    statusClass = 'status-warning';
+                                    break;
+                                case 'completed':
+                                    statusDisplay = '已完成';
+                                    statusClass = 'status-running';
+                                    break;
+                                case 'failed':
+                                    statusDisplay = '失败';
+                                    statusClass = 'status-error';
+                                    break;
+                            }
+                            
+                            const truncatedToken = truncateToken(req.token, 20);
+                            const responseTimeDisplay = req.status === 'processing' 
+                                ? `${formatDuration(req.responseTime)} ⏱️`
+                                : formatDuration(req.responseTime);
+                            
+                            return `
+                                <tr class="${req.isActive ? 'active-request' : ''}" style="${req.isActive ? 'background-color: rgba(255, 193, 7, 0.1);' : ''}">
+                                    <td style="font-size: 0.85rem;">${formatTime(req.timestamp).replace(/:\d{2}$/, '')}</td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${req.url}">
+                                        ${req.url}
+                                    </td>
+                                    <td>
+                                        <span class="status-badge ${statusClass}">${statusDisplay}</span>
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 0.75rem;" title="${req.token}">
+                                        ${truncatedToken ? `<span style="background: #f8f9fa; padding: 2px 4px; border-radius: 3px; border: 1px solid #dee2e6;">${truncatedToken}</span>` : '-'}
+                                    </td>
+                                    <td style="font-weight: ${req.isActive ? 'bold' : 'normal'};">
+                                        ${responseTimeDisplay}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <div style="margin-top: 10px; font-size: 0.85rem; color: #6c757d; text-align: center;">
+                    显示最近 ${Math.min(allRequests.length, 50)} 条记录
+                    ${allRequests.length > 50 ? `（共 ${allRequests.length} 条）` : ''}
+                </div>
+            `;
+            
+            element.innerHTML = tableHTML;
+        }
+
+        // 重置监控数据
+        async function resetMonitorData() {
+            if (!confirm('确定要重置所有监控数据吗？')) return;
+            
+            try {
+                const response = await fetch('/api/monitor/reset', { method: 'POST' });
+                if (response.ok) {
+                    // 重置本地数据
+                    loadHistory = [];
+                    peakConcurrent = 0;
+                    if (loadChart) {
+                        loadChart.clear();
+                    }
+                    alert('监控数据已重置');
+                    fetchMonitorData();
+                } else {
+                    throw new Error('重置失败');
+                }
+            } catch (error) {
+                alert('重置失败: ' + error.message);
+            }
+        }
+
+        // 启动监控
+        function startMonitoring() {
+            fetchMonitorData(); // 立即获取一次数据
+            updateInterval = setInterval(fetchMonitorData, 1000); // 每1秒更新一次
+        }
+
+        // 停止监控
+        function stopMonitoring() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+        }
+
+        // 更新负载指标
+        function updateLoadMetrics(data) {
+            const currentActive = data.requests.active;
+            const totalCapacity = data.instances.total;
+            
+            // 更新峰值并发
+            peakConcurrent = Math.max(peakConcurrent, currentActive);
+            
+            // 记录负载历史
+            loadHistory.push(currentActive);
+            if (loadHistory.length > 60) {
+                loadHistory.shift();
+            }
+            
+            // 计算平均负载
+            const avgLoad = loadHistory.length > 0 ? 
+                loadHistory.reduce((sum, val) => sum + val, 0) / loadHistory.length : 0;
+            
+            // 更新汇总指标
+            document.getElementById('currentActive').textContent = currentActive;
+            document.getElementById('peakConcurrent').textContent = peakConcurrent;
+            document.getElementById('avgLoad').textContent = avgLoad.toFixed(1);
+            document.getElementById('totalCapacity').textContent = totalCapacity;
+        }
+        
+        // 更新图表
+        function updateCharts(data) {
+            if (loadChart) {
+                const currentActive = data.requests.active;
+                const now = new Date();
+                loadChart.addData(currentActive, now);
+            }
+        }
+        
+        // 页面加载完成后启动监控
+        document.addEventListener('DOMContentLoaded', () => {
+            // 延迟初始化图表，确保DOM完全渲染
+            setTimeout(() => {
+                initCharts();
+                startMonitoring();
+            }, 100);
+        });
+
+        // 窗口大小调整时重新调整图表
+        window.addEventListener('resize', () => {
+            if (loadChart) {
+                loadChart.resize();
+            }
+        });
+
+        // 页面离开时停止监控
+        window.addEventListener('beforeunload', stopMonitoring);
+        
+        // 页面可见性变化时控制监控
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopMonitoring();
+            } else {
+                startMonitoring();
+            }
+        });
+    </script>
+</body>
+</html>

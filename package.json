@@ -3,8 +3,13 @@
   "version": "2.1.3",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles --verbose"
+    "start": "node start.js",
+    "start:dev": "node start.js --browserLimit=10",
+    "start:prod": "node start.js --browserLimit=25",
+    "start:light": "node start.js --browserLimit=5",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles --verbose",
+    "test:api": "python3 test_service.py",
+    "monitor": "open http://localhost:3000/monitor"
   },
   "jest": {
     "testMatch": [
@@ -18,15 +23,14 @@
     "waf",
     "scraper",
     "puppeteer",
-    "xvfb",
     "turnstile",
     "bypass",
-    "undetected",
-    "stealth"
+    "local-deployment",
+    "real-browser"
   ],
   "author": "zfcsoftware",
   "license": "ISC",
-  "description": "This package is an experimental and educational package created for Cloudflare protections.",
+  "description": "本地版本的 Cloudflare 保护绕过工具，支持页面源码获取、Turnstile令牌生成和WAF会话创建。无需Docker，直接本地部署。",
   "dependencies": {
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",

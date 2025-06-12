@@ -13,7 +13,8 @@ async function createBrowser(options = {}) {
         }
 
         global.browser = null
-        global.browserContexts = new Set() 
+        global.browserContexts = new Set()
+        global.cleanupTimer = null
 
         console.log('Launching the browser...')
 
@@ -31,9 +32,42 @@ async function createBrowser(options = {}) {
                     width: width,
                     height: height
                 },
-                timeout: 60000,
+                timeout: 120000,
+                protocolTimeout: 300000,
                 args: [
-                    `--window-size=${width},${height}`
+                    `--window-size=${width},${height}`,
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-gpu',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-features=TranslateUI',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-background-networking',
+                    '--disable-default-apps',
+                    '--disable-extensions',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--hide-scrollbars',
+                    '--metrics-recording-only',
+                    '--mute-audio',
+                    '--no-default-browser-check',
+                    '--safebrowsing-disable-auto-update',
+                    '--disable-client-side-phishing-detection',
+                    '--disable-component-update',
+                    '--disable-domain-reliability',
+                    '--disable-features=AudioServiceOutOfProcess',
+                    '--disable-hang-monitor',
+                    '--disable-prompt-on-repost',
+                    '--disable-web-security',
+                    '--max_old_space_size=512',
+                    '--memory-pressure-off'
                 ]
             },
             disableXvfb: false,
@@ -50,6 +84,31 @@ async function createBrowser(options = {}) {
         }
 
         console.log('Browser launched successfully')
+        
+        // 定期清理不活跃的上下文
+        if (global.cleanupTimer) {
+            clearInterval(global.cleanupTimer)
+        }
+        
+        global.cleanupTimer = setInterval(async () => {
+            if (global.browserContexts.size > 0) {
+                console.log(`Periodic cleanup: ${global.browserContexts.size} contexts active`)
+                
+                // 如果上下文数量过多，强制清理一些
+                if (global.browserContexts.size > global.browserLimit * 0.8) {
+                    const contextsArray = Array.from(global.browserContexts)
+                    const toCleanup = contextsArray.slice(0, Math.floor(contextsArray.length * 0.3))
+                    
+                    for (const context of toCleanup) {
+                        try {
+                            await context.close().catch(() => {})
+                            global.browserContexts.delete(context)
+                        } catch (e) {}
+                    }
+                    console.log(`Cleaned up ${toCleanup.length} inactive contexts`)
+                }
+            }
+        }, 60000) // 每分钟检查一次
 
         const originalCreateContext = browser.createBrowserContext.bind(browser)
         browser.createBrowserContext = async function(...args) {
@@ -102,24 +161,40 @@ async function createBrowser(options = {}) {
     }
 }
 
-process.on('SIGINT', async () => {
-    console.log('Received SIGINT, cleaning up...')
+// 清理函数
+const gracefulShutdown = async () => {
+    console.log('Shutting down gracefully...')
     global.finished = true
+    
+    if (global.cleanupTimer) {
+        clearInterval(global.cleanupTimer)
+    }
     
     if (global.browser) {
         try {
-            // 关闭所有上下文
             if (global.browserContexts) {
-                for (const context of global.browserContexts) {
-                    await context.close().catch(() => {})
-                }
+                console.log(`Closing ${global.browserContexts.size} browser contexts...`)
+                const closePromises = Array.from(global.browserContexts).map(context => 
+                    context.close().catch(() => {})
+                )
+                await Promise.allSettled(closePromises)
+                global.browserContexts.clear()
             }
             await global.browser.close().catch(() => {})
+            console.log('Browser closed successfully')
         } catch (e) {
             console.error("Error during cleanup:", e.message)
         }
     }
-    
+}
+
+process.on('SIGINT', async () => {
+    await gracefulShutdown()
+    process.exit(0)
+})
+
+process.on('SIGTERM', async () => {
+    await gracefulShutdown() 
     process.exit(0)
 })
 
