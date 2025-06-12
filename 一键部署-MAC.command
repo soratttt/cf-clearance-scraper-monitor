@@ -34,7 +34,7 @@ else
 fi
 
 # 检查并安装 Node.js
-echo -e "${YELLOW}[2/5] 检查 Node.js...${NC}"
+echo -e "${YELLOW}[2/6] 检查 Node.js...${NC}"
 if ! command -v node &> /dev/null; then
     echo "Node.js 未安装，正在通过 Homebrew 安装..."
     brew install node
@@ -51,8 +51,18 @@ if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$NODE_VERSION" | sort -V | head -n1)"
     brew upgrade node
 fi
 
+# 检查并安装 Google Chrome
+echo -e "${YELLOW}[3/6] 检查 Google Chrome...${NC}"
+if ! [ -d "/Applications/Google Chrome.app" ]; then
+    echo "Google Chrome 未安装，正在通过 Homebrew 安装..."
+    brew install --cask google-chrome
+    echo "✓ Google Chrome 安装完成"
+else
+    echo "✓ Google Chrome 已安装"
+fi
+
 # 安装项目依赖
-echo -e "${YELLOW}[3/5] 安装项目依赖...${NC}"
+echo -e "${YELLOW}[4/6] 安装项目依赖...${NC}"
 if [ ! -d "node_modules" ]; then
     echo "正在安装依赖包..."
     npm install
@@ -62,11 +72,11 @@ else
 fi
 
 # 检查防火墙设置
-echo -e "${YELLOW}[4/5] 检查系统设置...${NC}"
+echo -e "${YELLOW}[5/6] 检查系统设置...${NC}"
 echo "提示：如果系统弹出防火墙询问，请选择"允许"以便局域网访问"
 
 # 创建启动脚本
-echo -e "${YELLOW}[5/5] 准备启动服务...${NC}"
+echo -e "${YELLOW}[6/6] 准备启动服务...${NC}"
 
 # 检查端口是否被占用
 PORT=3000

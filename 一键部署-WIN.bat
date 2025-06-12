@@ -9,7 +9,7 @@ echo.
 cd /d "%~dp0"
 
 :: Check Node.js
-echo [1/3] Checking Node.js...
+echo [1/4] Checking Node.js...
 where node >nul 2>&1
 if %errorLevel% neq 0 (
     echo [ERROR] Node.js not found!
@@ -28,9 +28,32 @@ if %errorLevel% neq 0 (
     node --version
 )
 
+:: Check Google Chrome
+echo.
+echo [2/4] Checking Google Chrome...
+if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
+    echo [OK] Google Chrome found
+) else if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" (
+    echo [OK] Google Chrome found
+) else (
+    echo [WARNING] Google Chrome not found!
+    echo.
+    echo Chrome is required for the service to work properly.
+    echo Please install Google Chrome:
+    echo 1. Visit: https://www.google.com/chrome
+    echo 2. Download and install
+    echo 3. Restart this script
+    echo.
+    echo Opening Chrome download page...
+    start https://www.google.com/chrome
+    echo.
+    echo Press any key to continue anyway or Ctrl+C to exit...
+    pause >nul
+)
+
 :: Install dependencies
 echo.
-echo [2/3] Installing dependencies...
+echo [3/4] Installing dependencies...
 if not exist "node_modules" (
     npm install
     if %errorLevel% neq 0 (
@@ -44,7 +67,7 @@ if not exist "node_modules" (
 
 :: Setup firewall
 echo.
-echo [3/3] Configuring system...
+echo [4/4] Configuring system...
 netsh advfirewall firewall add rule name="CF Clearance Scraper" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
 
 :: Kill existing processes

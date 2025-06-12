@@ -33,8 +33,8 @@ chmod +x "一键部署-MAC.command"
 ## 📋 部署说明
 
 ### 🔧 自动安装内容
-- **Mac**: Homebrew → Node.js → 项目依赖 → 环境配置
-- **Windows**: Node.js检查 → 项目依赖 → 防火墙配置 → 服务启动
+- **Mac**: Homebrew → Node.js → Google Chrome → 项目依赖 → 环境配置
+- **Windows**: Node.js检查 → Chrome检查 → 项目依赖 → 防火墙配置 → 服务启动
 
 ### 🌐 服务地址
 部署成功后，脚本会自动显示访问地址：
@@ -53,17 +53,28 @@ chmod +x "一键部署-MAC.command"
 ### Mac 常见问题
 1. **权限问题**: 右键点击文件 → "打开" → 确认运行
 2. **Homebrew 安装失败**: 检查网络连接，手动安装 Homebrew
-3. **端口占用**: 脚本会自动处理，或手动关闭占用进程
+3. **Chrome 安装失败**: 手动访问 [chrome.google.com](https://www.google.com/chrome) 下载安装
+4. **端口占用**: 脚本会自动处理，或手动关闭占用进程
+5. **浏览器连接失败**: 确保Chrome已正确安装且可正常启动
 
 ### Windows 常见问题
-1. **执行策略限制**: 以管理员身份运行 PowerShell，执行 `Set-ExecutionPolicy RemoteSigned`
+1. **执行策略限制**: 以管理员身份运行BAT文件
 2. **防火墙阻止**: 选择"允许访问"或手动添加防火墙规则
-3. **Chocolatey 安装失败**: 检查网络连接，或手动安装 Node.js
+3. **Chrome 未找到**: 手动安装Chrome浏览器到默认位置
+4. **浏览器连接错误**: 检查Chrome是否能正常启动，重启电脑后重试
 
-### 手动安装 Node.js
+### 手动安装依赖
+
+#### Node.js 安装
 如果自动安装失败，请手动安装：
-- Mac: 从 [nodejs.org](https://nodejs.org) 下载 .pkg 安装包
-- Windows: 从 [nodejs.org](https://nodejs.org) 下载 .msi 安装包
+- **Mac**: 从 [nodejs.org](https://nodejs.org) 下载 .pkg 安装包
+- **Windows**: 从 [nodejs.org](https://nodejs.org) 下载 .msi 安装包
+
+#### Google Chrome 安装
+服务需要Chrome浏览器才能正常工作：
+- **通用**: 访问 [chrome.google.com](https://www.google.com/chrome) 下载安装
+- **Mac**: 安装到 `/Applications/Google Chrome.app`
+- **Windows**: 安装到默认位置（通常是 `Program Files` 或 `Program Files (x86)`）
 
 安装完成后重新运行部署脚本。
 
