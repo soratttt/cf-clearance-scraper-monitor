@@ -79,7 +79,7 @@ echo "提示：如果系统弹出防火墙询问，请选择"允许"以便局域
 echo -e "${YELLOW}[6/6] 准备启动服务...${NC}"
 
 # 检查端口是否被占用
-PORT=3000
+PORT=3000  # 🔧 修改这里的端口号
 if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null ; then
     echo -e "${YELLOW}端口 $PORT 已被占用，尝试关闭现有进程...${NC}"
     lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
@@ -90,15 +90,16 @@ echo -e "${GREEN}=== 安装完成! ===${NC}"
 echo
 echo -e "${BLUE}正在启动 CF Clearance Scraper 服务...${NC}"
 echo "启动后服务地址："
-echo "  本地访问: http://localhost:3000"
-echo "  监控面板: http://localhost:3000/monitor"
-echo "  局域网访问: http://$(ipconfig getifaddr en0):3000 (如果连接WiFi)"
+echo "  本地访问: http://localhost:$PORT"
+echo "  监控面板: http://localhost:$PORT/monitor"
+echo "  局域网访问: http://$(ipconfig getifaddr en0):$PORT (如果连接WiFi)"
 echo
 echo "按 Ctrl+C 停止服务"
 echo "----------------------------------------"
 
 # 启动服务
 export NODE_ENV=production
+export PORT=$PORT
 node src/index.js
 
 # 如果脚本意外退出，保持终端打开

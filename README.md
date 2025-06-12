@@ -55,15 +55,20 @@ npm start
 ### 自定义配置启动
 
 ```bash
-# 设置并发数和端口
-PORT=3000 browserLimit=100 node src/index.js
+# 设置端口和并发数
+PORT=8080 browserLimit=100 node src/index.js
+
+# 使用不同端口
+PORT=9000 node src/index.js
 ```
+
+> 💡 **端口修改**: 详细的端口配置方法请查看 [端口配置指南](PORT_CONFIG.md)
 
 ### 环境变量配置
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| `PORT` | 3000 | 服务端口 |
+| `PORT` | 3000 | 服务端口 [🔧 配置指南](PORT_CONFIG.md) |
 | `browserLimit` | 100 | 最大并发浏览器上下文数 |
 | `timeOut` | 60000 | 请求超时时间(毫秒) |
 | `memoryCleanupInterval` | 300000 | 内存清理间隔(毫秒) |

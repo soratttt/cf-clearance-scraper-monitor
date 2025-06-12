@@ -65,13 +65,15 @@ if not exist "node_modules" (
     echo [OK] Dependencies ready
 )
 
-:: Setup firewall
+:: Setup firewall  
 echo.
 echo [4/4] Configuring system...
-netsh advfirewall firewall add rule name="CF Clearance Scraper" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
+set PORT=3000
+REM 🔧 修改上面这行的端口号
+netsh advfirewall firewall add rule name="CF Clearance Scraper" dir=in action=allow protocol=TCP localport=%PORT% >nul 2>&1
 
 :: Kill existing processes
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do (
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%PORT% ^| findstr LISTENING') do (
     taskkill /PID %%a /F >nul 2>&1
 )
 
@@ -87,10 +89,10 @@ echo.
 echo ========== Ready to Start ==========
 echo.
 echo Service URLs:
-echo   Local:    http://localhost:3000
-echo   Monitor:  http://localhost:3000/monitor
+echo   Local:    http://localhost:%PORT%
+echo   Monitor:  http://localhost:%PORT%/monitor
 if defined LAN_IP (
-    echo   LAN:      http://%LAN_IP%:3000
+    echo   LAN:      http://%LAN_IP%:%PORT%
 )
 echo.
 echo Press Ctrl+C to stop service
@@ -98,6 +100,7 @@ echo ====================================
 echo.
 
 set NODE_ENV=production
+set PORT=%PORT%
 node src/index.js
 
 echo.
