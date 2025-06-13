@@ -58,7 +58,7 @@ source venv/bin/activate
 venv\Scripts\activate
 
 # 安装依赖
-pip install -r requirements.txt
+pip install -e hcaptcha-challenger/
 
 # 安装Playwright浏览器
 playwright install chromium

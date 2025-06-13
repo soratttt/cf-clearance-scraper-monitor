@@ -110,7 +110,7 @@ if exist "captcha-solvers\hcaptcha" (
                 echo Installing hCaptcha dependencies...
                 call venv\Scripts\activate.bat
                 pip install --upgrade pip >nul 2>&1
-                pip install -r requirements.txt >nul 2>&1
+                pip install -e hcaptcha-challenger/ >nul 2>&1
                 if %errorLevel% equ 0 (
                     echo Installing Playwright browser...
                     playwright install chromium >nul 2>&1

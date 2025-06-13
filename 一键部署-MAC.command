@@ -120,7 +120,7 @@ if [ -d "$HCAPTCHA_DIR" ] && command -v python3 &> /dev/null; then
             source venv/bin/activate
             echo "安装 hCaptcha 依赖包..."
             pip install --upgrade pip &> /dev/null
-            pip install -r requirements.txt &> /dev/null
+            pip install -e hcaptcha-challenger/ &> /dev/null
             if [ $? -eq 0 ]; then
                 echo "安装 Playwright 浏览器..."
                 playwright install chromium &> /dev/null
