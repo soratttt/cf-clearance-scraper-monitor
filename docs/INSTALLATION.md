@@ -5,6 +5,11 @@
 ### Mac 系统
 双击运行 `一键部署-MAC.command`
 
+**如果遇到"未打开"错误**:
+1. 右键点击 `一键部署-MAC.command` → 选择"打开"
+2. 在弹出的安全提示中点击"打开"
+3. 或者在终端中运行: `chmod +x 一键部署-MAC.command && xattr -d com.apple.quarantine 一键部署-MAC.command`
+
 ### Windows 系统  
 双击运行 `一键部署-WIN.bat`
 
@@ -165,6 +170,10 @@ nvm use 20
 chmod +x 一键部署-MAC.command
 chmod +x start-mac.command
 chmod +x deployment_check.sh
+
+# Mac 移除隔离标记（如果双击无法运行）
+xattr -d com.apple.quarantine 一键部署-MAC.command
+xattr -d com.apple.quarantine start-mac.command
 ```
 
 #### 4. **Python依赖安装失败**
