@@ -459,6 +459,44 @@ th {
     opacity: 1;
 }
 
+/* 仪表盘样式 */
+.gauge-container {
+    display: inline-block;
+    position: relative;
+}
+
+.gauge {
+    transform: rotate(0deg);
+    transition: all 0.5s ease-in-out;
+}
+
+.gauge circle:last-of-type {
+    transition: stroke-dashoffset 1s ease-in-out;
+}
+
+/* CPU 仪表盘颜色 */
+.gauge circle:last-of-type[stroke="#3498db"] {
+    stroke: #3498db;
+}
+
+/* 内存仪表盘颜色 */
+.gauge circle:last-of-type[stroke="#e74c3c"] {
+    stroke: #e74c3c;
+}
+
+/* 根据使用率调整颜色 */
+.gauge-high-usage circle:last-of-type {
+    stroke: #e74c3c !important;
+}
+
+.gauge-medium-usage circle:last-of-type {
+    stroke: #f39c12 !important;
+}
+
+.gauge-low-usage circle:last-of-type {
+    stroke: #27ae60 !important;
+}
+
 @media (max-width: 768px) {
     .dashboard {
         grid-template-columns: 1fr;
@@ -470,5 +508,95 @@ th {
     
     .header h1 {
         font-size: 2rem;
+    }
+    
+    /* 移动端仪表盘调整 */
+    .gauge {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .gauge text {
+        font-size: 14px;
+    }
+}
+
+/* 实时图表样式 */
+.chart-card {
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 12px;
+    height: 120px;
+    margin-bottom: 12px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.chart-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.chart-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.chart-canvas {
+    width: 100%;
+    height: 80px;
+    display: block;
+}
+
+/* 青色系颜色定义 */
+.cpu-color {
+    color: #00ffff;
+}
+
+.memory-color {
+    color: #00ffaa;
+}
+
+.heap-color {
+    color: #00ddff;
+}
+
+/* 实时图表容器样式 */
+.charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Canvas高清适配 */
+canvas {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 移动端图表调整 */
+@media (max-width: 768px) {
+    .chart-card {
+        height: 100px;
+        padding: 10px;
+    }
+    
+    .chart-canvas {
+        height: 60px;
+    }
+    
+    .chart-title {
+        font-size: 0.8rem;
+    }
+    
+    .chart-value {
+        font-size: 0.85rem;
     }
 }

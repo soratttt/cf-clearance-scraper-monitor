@@ -7,6 +7,12 @@ class MemoryManager {
         this.forceGcThreshold = 0.9; // 90% of max heap
         this.monitoringInterval = 30000; // 30 seconds
         this.monitoring = false;
+        
+        // CPU监控相关 - 系统级监控
+        this.cpuUsageHistory = [];
+        this.maxCpuHistory = 20;
+        this.lastSystemCpuTotal = null;
+        this.lastSystemCpuIdle = null;
     }
 
     startMonitoring() {
@@ -36,12 +42,13 @@ class MemoryManager {
         const systemFreeMB = Math.round(os.freemem() / 1024 / 1024);
         const systemTotalMB = Math.round(os.totalmem() / 1024 / 1024);
 
-        const heapUsagePercent = heapUsedMB / this.maxHeapUsage;
+        // 使用实际的堆总量来计算使用率，而不是配置的最大值
+        const heapUsagePercent = heapTotalMB > 0 ? heapUsedMB / heapTotalMB : 0;
 
         // 记录内存使用情况
         if (heapUsagePercent > 0.7) {
-            console.log(`⚠️  High memory usage: ${heapUsedMB}MB/${this.maxHeapUsage}MB (${Math.round(heapUsagePercent * 100)}%)`);
-            console.log(`   Heap total: ${heapTotalMB}MB, RSS: ${rssMB}MB`);
+            console.log(`⚠️  High memory usage: ${heapUsedMB}MB/${heapTotalMB}MB (${Math.round(heapUsagePercent * 100)}%)`);
+            console.log(`   RSS: ${rssMB}MB`);
             console.log(`   System: ${systemTotalMB - systemFreeMB}MB/${systemTotalMB}MB used`);
         }
 
@@ -109,6 +116,63 @@ class MemoryManager {
         }
     }
 
+    getCpuUsage() {
+        const cpus = os.cpus();
+        const numCpus = cpus.length;
+        
+        // 获取系统CPU使用率
+        let totalIdle = 0;
+        let totalTick = 0;
+        
+        cpus.forEach((cpu) => {
+            for (let type in cpu.times) {
+                totalTick += cpu.times[type];
+            }
+            totalIdle += cpu.times.idle;
+        });
+        
+        const idle = totalIdle / numCpus;
+        const total = totalTick / numCpus;
+        
+        // 计算当前时刻的系统CPU使用率
+        if (this.lastSystemCpuTotal && this.lastSystemCpuIdle) {
+            const totalDiff = total - this.lastSystemCpuTotal;
+            const idleDiff = idle - this.lastSystemCpuIdle;
+            const cpuPercent = 100 - ~~(100 * idleDiff / totalDiff);
+            
+            // 更新历史记录
+            this.cpuUsageHistory.push(cpuPercent);
+            if (this.cpuUsageHistory.length > this.maxCpuHistory) {
+                this.cpuUsageHistory.shift();
+            }
+            
+            // 更新上次记录
+            this.lastSystemCpuTotal = total;
+            this.lastSystemCpuIdle = idle;
+            
+            // 计算平均CPU使用率
+            const avgCpuUsage = this.cpuUsageHistory.length > 0 
+                ? this.cpuUsageHistory.reduce((sum, val) => sum + val, 0) / this.cpuUsageHistory.length
+                : 0;
+            
+            return {
+                current: Math.min(Math.max(cpuPercent, 0), 100),
+                average: Math.min(Math.max(avgCpuUsage, 0), 100),
+                history: this.cpuUsageHistory.slice(-10)
+            };
+        } else {
+            // 首次调用，初始化基准值
+            this.lastSystemCpuTotal = total;
+            this.lastSystemCpuIdle = idle;
+            
+            return {
+                current: 0,
+                average: 0,
+                history: []
+            };
+        }
+    }
+
     getMemoryStats() {
         const memUsage = process.memoryUsage();
         const systemMem = {
@@ -116,21 +180,119 @@ class MemoryManager {
             total: os.totalmem()
         };
 
+        const cpuStats = this.getCpuUsage();
+
+        // 计算更准确的内存使用情况
+        // 在 macOS/Linux 中，可用内存应该包括缓存和缓冲区
+        const actualUsed = this.getActualMemoryUsage();
+        const usedMemoryMB = actualUsed ? Math.round(actualUsed / 1024 / 1024) : 
+                           Math.round((systemMem.total - systemMem.free) / 1024 / 1024);
+
+        // 计算堆内存使用率
+        const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+        const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+        const heapUsagePercent = heapTotalMB > 0 ? (heapUsedMB / heapTotalMB) * 100 : 0;
+
         return {
             process: {
-                heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
-                heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
-                rss: Math.round(memUsage.rss / 1024 / 1024),
+                heapUsed: `${heapUsedMB}MB`,
+                heapTotal: heapTotalMB,
+                heapUsagePercent: Math.round(heapUsagePercent * 10) / 10, // 保留一位小数
+                rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
                 external: Math.round(memUsage.external / 1024 / 1024)
             },
             system: {
                 free: Math.round(systemMem.free / 1024 / 1024),
                 total: Math.round(systemMem.total / 1024 / 1024),
-                used: Math.round((systemMem.total - systemMem.free) / 1024 / 1024)
+                used: usedMemoryMB,
+                // 添加实际可用内存（包括可回收的缓存）
+                available: Math.round(systemMem.total / 1024 / 1024) - usedMemoryMB
             },
+            cpu: cpuStats,
             browserContexts: global.browserContexts ? global.browserContexts.size : 0,
             activeBrowsers: global.browserLength || 0
         };
+    }
+
+    // 获取更准确的内存使用情况
+    getActualMemoryUsage() {
+        const platform = process.platform;
+        
+        if (platform === 'darwin') {
+            // macOS: 使用 vm_stat 获取内存压力信息
+            try {
+                const { execSync } = require('child_process');
+                const vmstat = execSync('vm_stat', { encoding: 'utf8' });
+                
+                // 从vm_stat输出中提取页面大小
+                let pageSize = 16384; // 默认值，可能是16KB或4KB
+                if (vmstat.includes('page size of ')) {
+                    const match = vmstat.match(/page size of (\d+) bytes/);
+                    if (match) {
+                        pageSize = parseInt(match[1]);
+                    }
+                }
+                
+                const lines = vmstat.split('\n');
+                let activePages = 0;
+                let wiredPages = 0;
+                let compressedPages = 0;
+                let freePages = 0;
+                let speculativePages = 0;
+                
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.includes('Pages free:')) {
+                        freePages = parseInt(trimmedLine.split(':')[1].trim().replace('.', ''));
+                    } else if (trimmedLine.includes('Pages active:')) {
+                        activePages = parseInt(trimmedLine.split(':')[1].trim().replace('.', ''));
+                    } else if (trimmedLine.includes('Pages wired down:')) {
+                        wiredPages = parseInt(trimmedLine.split(':')[1].trim().replace('.', ''));
+                    } else if (trimmedLine.includes('Pages occupied by compressor:')) {
+                        compressedPages = parseInt(trimmedLine.split(':')[1].trim().replace('.', ''));
+                    } else if (trimmedLine.includes('Pages speculative:')) {
+                        speculativePages = parseInt(trimmedLine.split(':')[1].trim().replace('.', ''));
+                    }
+                }
+                
+                // 计算内存压力：类似Activity Monitor的内存压力算法
+                // App内存 = active + wired + compressed
+                // 不包括free和speculative（这些是可用的）
+                const memoryPressurePages = activePages + wiredPages + compressedPages;
+                return memoryPressurePages * pageSize;
+            } catch (error) {
+                // 如果获取失败，返回 null 使用默认计算
+                return null;
+            }
+        } else if (platform === 'linux') {
+            // Linux: 尝试读取 /proc/meminfo
+            try {
+                const fs = require('fs');
+                const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
+                const lines = meminfo.split('\n');
+                
+                let memTotal = 0;
+                let memAvailable = 0;
+                
+                for (const line of lines) {
+                    if (line.startsWith('MemTotal:')) {
+                        memTotal = parseInt(line.split(/\s+/)[1]) * 1024; // 转换为字节
+                    } else if (line.startsWith('MemAvailable:')) {
+                        memAvailable = parseInt(line.split(/\s+/)[1]) * 1024; // 转换为字节
+                    }
+                }
+                
+                if (memTotal && memAvailable) {
+                    return memTotal - memAvailable;
+                }
+            } catch (error) {
+                // 如果获取失败，返回 null 使用默认计算
+                return null;
+            }
+        }
+        
+        // 其他平台或获取失败时返回 null
+        return null;
     }
 }
 

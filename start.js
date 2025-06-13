@@ -7,13 +7,16 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-// 默认配置
+// 加载统一配置文件
+require('dotenv').config({ path: path.join(__dirname, '.env') })
+
+// 默认配置 (合并环境变量配置)
 const defaultConfig = {
-    PORT: 3000,
-    browserLimit: 25,
-    timeOut: 60000,
-    memoryCleanupInterval: 300000,
-    maxMemoryUsage: 512
+    PORT: Number(process.env.PORT) || 3000,
+    browserLimit: Number(process.env.BROWSER_LIMIT) || 25,
+    timeOut: Number(process.env.TIMEOUT) || 60000,
+    memoryCleanupInterval: Number(process.env.MEMORY_CLEANUP_INTERVAL) || 300000,
+    maxMemoryUsage: Number(process.env.MAX_MEMORY_USAGE) || 512
 };
 
 // 解析命令行参数

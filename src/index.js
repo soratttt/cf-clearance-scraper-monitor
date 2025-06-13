@@ -1,17 +1,21 @@
+// 加载根目录的统一配置文件
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') })
+
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 3000
 const bodyParser = require('body-parser')
-const authToken = process.env.authToken || null
+const authToken = process.env.AUTH_TOKEN || process.env.authToken || null // 兼容旧格式
 const cors = require('cors')
 const reqValidate = require('./module/reqValidate')
 const memoryManager = require('./utils/memoryManager')
 
-global.browserLength = 0
-global.browserLimit = 100
-global.timeOut = Number(process.env.timeOut || 60000)
-global.memoryCleanupInterval = Number(process.env.memoryCleanupInterval) || 300000 // 5分钟
-global.maxMemoryUsage = Number(process.env.maxMemoryUsage) || 512 // MB
+// 请求计数器（替代浏览器实例计数）
+global.activeRequestCount = 0
+global.maxConcurrentRequests = Number(process.env.MAX_CONCURRENT_REQUESTS) || 100
+global.timeOut = Number(process.env.TIMEOUT || process.env.timeOut || 300000) // 兼容旧格式
+global.memoryCleanupInterval = Number(process.env.MEMORY_CLEANUP_INTERVAL || process.env.memoryCleanupInterval) || 300000
+global.maxMemoryUsage = Number(process.env.MAX_MEMORY_USAGE || process.env.maxMemoryUsage) || 512 // MB
 
 // 监控数据
 global.monitoringData = {
@@ -21,7 +25,11 @@ global.monitoringData = {
     failedRequests: 0,
     activeRequests: new Map(), // 存储当前活跃请求
     recentTokens: [], // 最近生成的token
-    requestHistory: [] // 请求历史
+    requestHistory: [], // 请求历史
+    activeRequestsByService: { // 按服务类型分组的活跃请求
+        cloudflare: 0,
+        hcaptcha: 0
+    }
 }
 
 app.use(bodyParser.json({}))
@@ -47,27 +55,69 @@ if (process.env.NODE_ENV !== 'test') {
     memoryManager.startMonitoring()
 }
 
-const getSource = require('./endpoints/getSource')
-const solveTurnstileMin = require('./endpoints/solveTurnstile.min')
-const solveTurnstileMax = require('./endpoints/solveTurnstile.max')
-const wafSession = require('./endpoints/wafSession')
+const getSource = require('../captcha-solvers/common/getSource')
+const solveTurnstileMin = require('../captcha-solvers/turnstile/solveTurnstile.min')
+const solveTurnstileMax = require('../captcha-solvers/turnstile/solveTurnstile.max')
+const wafSession = require('../captcha-solvers/common/wafSession')
+const { solveHcaptcha } = require('./endpoints/captcha')
 
 
-// 新版API格式支持
-app.post('/cftoken', async (req, res) => {
-    const data = req.body
+// 统一验证码处理接口 - 根路径
+app.post('/', async (req, res) => {
+    try {
+        const { type } = req.body;
 
-    // 新版API参数验证
-    if (!data.type || data.type !== 'cftoken') {
-        return res.status(400).json({ code: 400, message: 'type must be "cftoken"' })
+        if (!type) {
+            return res.status(400).json({
+                code: 400,
+                message: 'Missing required parameter: type. Supported types: cftoken, hcaptcha',
+                token: null
+            });
+        }
+
+        switch (type.toLowerCase()) {
+            case 'cftoken':
+                return await handleCftokenRequest(req, res);
+            
+            case 'hcaptcha':
+                return await solveHcaptcha(req, res);
+            
+            default:
+                return res.status(400).json({
+                    code: 400,
+                    message: `Unsupported type: ${type}. Supported types: cftoken, hcaptcha`,
+                    token: null
+                });
+        }
+    } catch (error) {
+        console.error('Error in unified captcha handler:', error);
+        return res.status(500).json({
+            code: 500,
+            message: `Internal server error: ${error.message}`,
+            token: null
+        });
     }
+})
 
+// 处理 cftoken 请求
+async function handleCftokenRequest(req, res) {
+    const data = req.body;
+
+    // 参数验证
     if (!data.websiteUrl) {
-        return res.status(400).json({ code: 400, message: 'websiteUrl is required' })
+        return res.status(400).json({ 
+            code: 400, 
+            message: 'websiteUrl is required',
+            token: null 
+        });
     }
 
     if (!data.websiteKey) {
-        return res.status(400).json({ code: 400, message: 'websiteKey is required' })
+        return res.status(400).json({ 
+            code: 400, 
+            message: 'websiteKey is required',
+            token: null 
+        });
     }
 
     // 转换为内部格式
@@ -76,13 +126,13 @@ app.post('/cftoken', async (req, res) => {
         siteKey: data.websiteKey,
         mode: 'turnstile-min',
         authToken: data.authToken
-    }
+    };
 
     // 处理请求
-    return handleClearanceRequest(req, res, internalData)
-})
+    return handleClearanceRequest(req, res, internalData);
+}
 
-// 原始API格式支持
+// 保留原始API格式支持 (向后兼容)
 app.post('/cf-clearance-scraper', async (req, res) => {
     const data = req.body
     return handleClearanceRequest(req, res, data)
@@ -96,13 +146,13 @@ async function handleClearanceRequest(req, res, data) {
 
     if (authToken && data.authToken !== authToken) return res.status(401).json({ code: 401, message: 'Unauthorized' })
 
-    if (global.browserLength >= global.browserLimit) return res.status(429).json({ code: 429, message: 'Too Many Requests' })
+    if (global.activeRequestCount >= global.maxConcurrentRequests) return res.status(429).json({ code: 429, message: 'Too Many Requests' })
 
     if (process.env.SKIP_LAUNCH != 'true' && !global.browser) return res.status(500).json({ code: 500, message: 'The scanner is not ready yet. Please try again a little later.' })
 
     var result = { code: 500 }
 
-    global.browserLength++
+    global.activeRequestCount++
     global.monitoringData.totalRequests++
     
     // 生成请求ID
@@ -117,9 +167,24 @@ async function handleClearanceRequest(req, res, data) {
         clientIP: req.ip || req.socket.remoteAddress
     })
     
+    // 更新按服务分组的活跃请求计数
+    if (data.mode === 'hcaptcha') {
+        global.monitoringData.activeRequestsByService.hcaptcha++;
+    } else {
+        global.monitoringData.activeRequestsByService.cloudflare++;
+    }
+    
     // 设置请求超时清理
     const requestTimeout = setTimeout(() => {
-        global.browserLength--
+        global.activeRequestCount--
+        const request = global.monitoringData.activeRequests.get(requestId)
+        if (request) {
+            if (request.mode === 'hcaptcha') {
+                global.monitoringData.activeRequestsByService.hcaptcha--;
+            } else {
+                global.monitoringData.activeRequestsByService.cloudflare--;
+            }
+        }
         global.monitoringData.activeRequests.delete(requestId)
         console.log('Request timeout, cleaning up')
     }, global.timeOut + 5000)
@@ -139,10 +204,18 @@ async function handleClearanceRequest(req, res, data) {
             break;
     }
 
-    global.browserLength--
+    global.activeRequestCount--
     clearTimeout(requestTimeout)
     
-    // 更新监控数据
+    // 更新监控数据 - 减少按服务分组的计数
+    const request = global.monitoringData.activeRequests.get(requestId)
+    if (request) {
+        if (request.mode === 'hcaptcha') {
+            global.monitoringData.activeRequestsByService.hcaptcha--;
+        } else {
+            global.monitoringData.activeRequestsByService.cloudflare--;
+        }
+    }
     global.monitoringData.activeRequests.delete(requestId)
     
     if (result.code === 200) {
@@ -192,8 +265,8 @@ async function handleClearanceRequest(req, res, data) {
     res.status(result.code ?? 500).send(result)
 }
 
-// 监控API端点
-app.get('/api/monitor', (req, res) => {
+// 监控API端点  
+app.get('/api/monitor', (_, res) => {
     try {
         const memStats = memoryManager.getMemoryStats()
         const uptime = Date.now() - global.monitoringData.startTime.getTime()
@@ -204,11 +277,11 @@ app.get('/api/monitor', (req, res) => {
             uptime: uptime,
             startTime: global.monitoringData.startTime,
             
-            // 实例信息
+            // 实例信息（基于请求计数）
             instances: {
-                total: global.browserLimit,
-                active: global.browserLength,
-                available: global.browserLimit - global.browserLength
+                total: global.maxConcurrentRequests,
+                active: global.activeRequestCount,
+                available: global.maxConcurrentRequests - global.activeRequestCount
             },
             
             // 请求统计
@@ -243,6 +316,9 @@ app.get('/api/monitor', (req, res) => {
             // 浏览器上下文信息
             browserContexts: global.browserContexts ? global.browserContexts.size : 0,
             
+            // 按服务分组的活跃请求
+            activeRequestsByService: global.monitoringData.activeRequestsByService,
+            
             // 时间戳
             timestamp: new Date()
         }
@@ -255,7 +331,7 @@ app.get('/api/monitor', (req, res) => {
 })
 
 // 重置监控数据
-app.post('/api/monitor/reset', (req, res) => {
+app.post('/api/monitor/reset', (_, res) => {
     global.monitoringData = {
         startTime: new Date(),
         totalRequests: 0,
@@ -263,7 +339,11 @@ app.post('/api/monitor/reset', (req, res) => {
         failedRequests: 0,
         activeRequests: new Map(),
         recentTokens: [],
-        requestHistory: []
+        requestHistory: [],
+        activeRequestsByService: {
+            cloudflare: 0,
+            hcaptcha: 0
+        }
     }
     res.json({ message: 'Monitor data reset successfully' })
 })
