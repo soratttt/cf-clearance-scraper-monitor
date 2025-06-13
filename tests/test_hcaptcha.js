@@ -10,8 +10,8 @@ const readline = require('readline');
 // 测试配置
 const TEST_CONFIG = {
     server: {
-        host: 'localhost',
-        port: 3001,
+        host: '192.168.0.138',
+        port: 3000,
         timeout: 360000 // 6分钟超时，给Python更多时间
     },
     hcaptcha: {
