@@ -15,7 +15,7 @@ from playwright.async_api import async_playwright
 # 加载根目录的统一配置文件
 root_dir = Path(__file__).parent.parent.parent
 env_path = root_dir / '.env'
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)  # 强制覆盖现有环境变量
 
 # 根据配置设置日志级别
 log_level = os.getenv('PYTHON_LOG_LEVEL', 'CRITICAL')
