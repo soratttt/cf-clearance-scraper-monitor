@@ -7,8 +7,8 @@ const path = require('path');
 
 // 导入各种验证码解决器
 const { solveHcaptcha } = require('../../captcha-solvers/hcaptcha/endpoint');
-const solveTurnstileMin = require('../../captcha-solvers/turnstile/solveTurnstile.min');
-const solveTurnstileMax = require('../../captcha-solvers/turnstile/solveTurnstile.max');
+const solveTurnstileMin = require('../../captcha-solvers/turnstile/endpoints/solveTurnstile.min');
+const solveTurnstileMax = require('../../captcha-solvers/turnstile/endpoints/solveTurnstile.max');
 
 /**
  * 统一的验证码解决接口

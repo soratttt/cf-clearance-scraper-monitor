@@ -534,10 +534,9 @@
             
             // 添加请求历史（已完成/失败状态）
             data.requestHistory.forEach(req => {
-                // 查找对应的token
+                // 查找对应的token - 只根据requestId匹配，避免重复
                 const matchingToken = data.recentTokens.find(token => 
-                    token.requestId === req.requestId || 
-                    (token.url === req.url && Math.abs(new Date(token.timestamp).getTime() - new Date(req.timestamp).getTime()) < 5000)
+                    token.requestId === req.requestId
                 );
                 
                 allRequests.push({

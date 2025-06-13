@@ -8,7 +8,9 @@
     "start:prod": "node start.js --browserLimit=25",
     "start:light": "node start.js --browserLimit=5",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles --verbose",
-    "test:api": "python3 test_service.py",
+    "test:quick": "node tests/quick_test.js",
+    "test:deployment": "node tests/test_hcaptcha_deployment.js",
+    "test:check": "./tests/deployment_check.sh",
     "monitor": "open http://localhost:3000/monitor"
   },
   "jest": {

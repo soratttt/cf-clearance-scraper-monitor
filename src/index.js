@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000
 const bodyParser = require('body-parser')
 const authToken = process.env.AUTH_TOKEN || process.env.authToken || null // 兼容旧格式
 const cors = require('cors')
-const reqValidate = require('./module/reqValidate')
+const reqValidate = require('../captcha-solvers/turnstile/module/reqValidate')
 const memoryManager = require('./utils/memoryManager')
 
 // 请求计数器（替代浏览器实例计数）
@@ -48,17 +48,17 @@ if (process.env.NODE_ENV !== 'development') {
         server.timeout = global.timeOut
     } catch (e) { }
 }
-if (process.env.SKIP_LAUNCH != 'true') require('./module/createBrowser')
+if (process.env.SKIP_LAUNCH != 'true') require('../captcha-solvers/turnstile/module/createBrowser')
 
 // 启动内存监控（仅在非测试环境）
 if (process.env.NODE_ENV !== 'test') {
     memoryManager.startMonitoring()
 }
 
-const getSource = require('../captcha-solvers/common/getSource')
-const solveTurnstileMin = require('../captcha-solvers/turnstile/solveTurnstile.min')
-const solveTurnstileMax = require('../captcha-solvers/turnstile/solveTurnstile.max')
-const wafSession = require('../captcha-solvers/common/wafSession')
+const getSource = require('../captcha-solvers/turnstile/endpoints/getSource')
+const solveTurnstileMin = require('../captcha-solvers/turnstile/endpoints/solveTurnstile.min')
+const solveTurnstileMax = require('../captcha-solvers/turnstile/endpoints/solveTurnstile.max')
+const wafSession = require('../captcha-solvers/turnstile/endpoints/wafSession')
 const { solveHcaptcha } = require('./endpoints/captcha')
 
 
@@ -207,8 +207,10 @@ async function handleClearanceRequest(req, res, data) {
     global.activeRequestCount--
     clearTimeout(requestTimeout)
     
-    // 更新监控数据 - 减少按服务分组的计数
+    // 更新监控数据 - 先获取请求信息，再删除
     const request = global.monitoringData.activeRequests.get(requestId)
+    const requestStartTime = request?.startTime
+    
     if (request) {
         if (request.mode === 'hcaptcha') {
             global.monitoringData.activeRequestsByService.hcaptcha--;
@@ -240,8 +242,7 @@ async function handleClearanceRequest(req, res, data) {
         global.monitoringData.failedRequests++
     }
     
-    // 记录请求历史
-    const requestStartTime = global.monitoringData.activeRequests.get(requestId)?.startTime
+    // 记录请求历史 - 使用之前获取的开始时间
     global.monitoringData.requestHistory.unshift({
         requestId: requestId,
         url: data.url,
