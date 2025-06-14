@@ -185,9 +185,55 @@ pip install --upgrade pip
 pip install -e hcaptcha-challenger/ -i https://pypi.tuna.tsinghua.edu.cn/simple/
 ```
 
+### Python 环境问题（新增）
+
+#### 1. **JSON 解析失败错误**
+**错误**: `解析测试结果失败: Unexpected token 'D', "Debug: 尝试加"... is not valid JSON`
+
+**原因**: Python 测试脚本输出了 Debug 信息，干扰了 JSON 解析
+
+**解决方案**: 已在最新版本中修复，如果仍遇到此问题，请更新到最新版本
+
+#### 2. **hcaptcha-challenger 模块未安装**
+**错误**: `❌ hcaptcha-challenger: 模块未安装`
+
+**解决方案**:
+```bash
+cd captcha-solvers/hcaptcha
+source venv/bin/activate
+pip install -e hcaptcha-challenger
+```
+
+#### 3. **Playwright 模块未安装**
+**错误**: `❌ Playwright: 模块未安装`
+
+**解决方案**:
+```bash
+cd captcha-solvers/hcaptcha
+source venv/bin/activate
+pip install playwright
+playwright install chromium
+```
+
+#### 4. **虚拟环境激活问题**
+如果 `source venv/bin/activate` 失败，可以尝试：
+```bash
+# 直接使用虚拟环境中的 Python
+./venv/bin/python -m pip install -e hcaptcha-challenger
+./venv/bin/python -m pip install playwright
+./venv/bin/playwright install chromium
+```
+
 ### 网络和服务问题
 
-#### 1. **服务无法访问**
+#### 1. **服务状态码 301 错误**
+**错误**: `❌ 服务可访问性: 服务返回状态码: 301`
+
+**原因**: 测试脚本请求了错误的端点路径
+
+**解决方案**: 已在最新版本中修复（使用 `/health` 端点替代 `/monitor`），如果仍遇到此问题，请更新到最新版本
+
+#### 2. **服务无法访问**
 **错误**: `无法连接到服务`
 
 **解决方案**:
@@ -202,7 +248,7 @@ pip install -e hcaptcha-challenger/ -i https://pypi.tuna.tsinghua.edu.cn/simple/
    netsh advfirewall firewall add rule name="CF Clearance Scraper" dir=in action=allow protocol=TCP localport=3000
    ```
 
-#### 2. **局域网访问问题**
+#### 3. **局域网访问问题**
 确保服务监听所有接口:
 - 检查 `start.js` 中的监听地址设置
 - 确保路由器/防火墙允许相应端口访问
@@ -211,26 +257,59 @@ pip install -e hcaptcha-challenger/ -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 如果遇到问题，建议按以下顺序排查：
 
-#### 1. 运行部署自检
+#### 1. 检查 Python 环境
+```bash
+# 确保 hCaptcha 依赖已正确安装
+cd captcha-solvers/hcaptcha
+source venv/bin/activate
+pip install -e hcaptcha-challenger
+pip install playwright
+playwright install chromium
+```
+
+#### 2. 运行部署自检
 ```bash
 ./tests/deployment_check.sh
 ```
 
-#### 2. 查看详细错误
+#### 3. 查看详细错误
 ```bash
 # 启动服务并查看详细日志
 NODE_ENV=development npm start
 ```
 
-#### 3. 运行完整测试
+#### 4. 运行完整测试
 ```bash
 node tests/test_hcaptcha_deployment.js
 ```
 
-#### 4. 快速功能测试
+#### 5. 快速功能测试
 ```bash
 node tests/quick_test.js
 ```
+
+### 常见问题快速解决
+
+#### 问题1: 测试失败 "hcaptcha-challenger 模块未安装"
+```bash
+cd captcha-solvers/hcaptcha
+source venv/bin/activate
+pip install -e hcaptcha-challenger
+```
+
+#### 问题2: 测试失败 "Playwright 模块未安装"
+```bash
+cd captcha-solvers/hcaptcha
+source venv/bin/activate
+pip install playwright
+playwright install chromium
+```
+
+#### 问题3: 服务返回 301 状态码
+已在最新版本中修复，请确保使用最新版本的测试脚本
+
+#### 问题4: JSON 解析失败
+已在最新版本中修复，请确保使用最新版本的测试脚本
 
 ### 常见错误代码
 

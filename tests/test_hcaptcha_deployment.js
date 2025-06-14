@@ -216,19 +216,15 @@ try:
             root_dir = script_dir.parent.parent.parent
     
     env_path = root_dir / '.env'
-    print(f"Debug: 尝试加载环境文件: {env_path}")
-    print(f"Debug: 文件是否存在: {env_path.exists()}")
     
     load_dotenv(env_path, override=True)
     api_key = os.getenv('GEMINI_API_KEY')
-    print(f"Debug: 读取到的API密钥长度: {len(api_key) if api_key else 0}")
     
     api_key_ok = api_key and api_key != 'your_actual_gemini_api_key_here' and len(api_key) > 20
     api_key_configured = bool(api_key_ok)
 except Exception as e:
     api_key_configured = False
     api_key_error = str(e)
-    print(f"Debug: 错误: {e}")
 
 result = {
     "hcaptcha_challenger": hcaptcha_ok,
@@ -298,7 +294,7 @@ function checkServiceStatus() {
         const req = http.request({
             hostname: host,
             port: port,
-            path: '/monitor',
+            path: '/health',
             method: 'GET',
             timeout: 10000
         }, (res) => {
@@ -310,7 +306,7 @@ function checkServiceStatus() {
             res.on('end', () => {
                 if (res.statusCode === 200) {
                     recordTest('服务可访问性', true, `服务在 ${baseUrl} 正常运行`);
-                    recordTest('监控页面', true, '监控页面可访问');
+                    recordTest('健康检查', true, '健康检查端点正常');
                     resolve(true);
                 } else {
                     recordTest('服务可访问性', false, `服务返回状态码: ${res.statusCode}`);
