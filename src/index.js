@@ -12,7 +12,7 @@ const memoryManager = require('./utils/memoryManager')
 
 // 请求计数器（替代浏览器实例计数）
 global.activeRequestCount = 0
-global.maxConcurrentRequests = Number(process.env.MAX_CONCURRENT_REQUESTS) || 100
+global.maxConcurrentRequests = Number(process.env.MAX_CONCURRENT_REQUESTS) || 60
 global.timeOut = Number(process.env.TIMEOUT || process.env.timeOut || 300000) // 兼容旧格式
 global.memoryCleanupInterval = Number(process.env.MEMORY_CLEANUP_INTERVAL || process.env.memoryCleanupInterval) || 300000
 global.maxMemoryUsage = Number(process.env.MAX_MEMORY_USAGE || process.env.maxMemoryUsage) || 512 // MB
@@ -306,7 +306,7 @@ app.get('/api/monitor', (_, res) => {
             })),
             
             // 最近的token
-            recentTokens: global.monitoringData.recentTokens.slice(0, 10),
+            recentTokens: global.monitoringData.recentTokens.slice(0, 30),
             
             // 请求历史
             requestHistory: global.monitoringData.requestHistory.slice(0, 20),

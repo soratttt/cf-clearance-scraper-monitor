@@ -3,9 +3,9 @@ const os = require('os');
 class MemoryManager {
     constructor() {
         this.maxHeapUsage = Number(process.env.maxMemoryUsage) || 512; // MB
-        this.gcThreshold = 0.8; // 80% of max heap
-        this.forceGcThreshold = 0.9; // 90% of max heap
-        this.monitoringInterval = 30000; // 30 seconds
+        this.gcThreshold = 0.6; // 60% of max heap - 更积极的GC
+        this.forceGcThreshold = 0.8; // 80% of max heap - 降低强制GC阈值
+        this.monitoringInterval = 15000; // 15 seconds - 更频繁的监控
         this.monitoring = false;
         
         // CPU监控相关 - 系统级监控
@@ -42,13 +42,14 @@ class MemoryManager {
         const systemFreeMB = Math.round(os.freemem() / 1024 / 1024);
         const systemTotalMB = Math.round(os.totalmem() / 1024 / 1024);
 
-        // 使用实际的堆总量来计算使用率，而不是配置的最大值
-        const heapUsagePercent = heapTotalMB > 0 ? heapUsedMB / heapTotalMB : 0;
+        // 使用配置的最大值来计算使用率，而不是动态的堆总量
+        const maxHeapMB = this.maxHeapUsage;
+        const heapUsagePercent = maxHeapMB > 0 ? heapUsedMB / maxHeapMB : 0;
 
         // 记录内存使用情况
         if (heapUsagePercent > 0.7) {
-            console.log(`⚠️  High memory usage: ${heapUsedMB}MB/${heapTotalMB}MB (${Math.round(heapUsagePercent * 100)}%)`);
-            console.log(`   RSS: ${rssMB}MB`);
+            console.log(`⚠️  High memory usage: ${heapUsedMB}MB/${maxHeapMB}MB (${Math.round(heapUsagePercent * 100)}%)`);
+            console.log(`   RSS: ${rssMB}MB, HeapTotal: ${heapTotalMB}MB`);
             console.log(`   System: ${systemTotalMB - systemFreeMB}MB/${systemTotalMB}MB used`);
         }
 
@@ -84,7 +85,8 @@ class MemoryManager {
     }
 
     softGarbageCollection() {
-        if (global.gc && Math.random() < 0.3) { // 30% chance
+        // 在高并发情况下，更积极的GC策略
+        if (global.gc && Math.random() < 0.5) { // 50% chance
             setImmediate(() => {
                 try {
                     global.gc();

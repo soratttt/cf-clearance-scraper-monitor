@@ -13,7 +13,157 @@ async function createBrowser(options = {}) {
         }
 
         global.browser = null
-        global.browserContexts = new Set() 
+        global.browserContexts = new Set()
+        global.contextPool = {
+            available: [],
+            maxSize: Number(process.env.CONTEXT_POOL_SIZE) || 20,
+            used: 0,
+            waitingQueue: [], // 等待队列
+            contextUsage: new Map(), // 跟踪每个上下文的使用次数
+            
+            async getContext() {
+                // 如果有可用的上下文，选择使用次数最少的
+                if (this.available.length > 0) {
+                    // 按使用次数排序，选择最少使用的
+                    this.available.sort((a, b) => 
+                        (this.contextUsage.get(a) || 0) - (this.contextUsage.get(b) || 0)
+                    );
+                    
+                    const context = this.available.shift();
+                    this.used++;
+                    
+                    // 增加使用计数
+                    const usage = this.contextUsage.get(context) || 0;
+                    this.contextUsage.set(context, usage + 1);
+                    
+                    console.log(`🔄 Reusing context (usage: ${usage + 1}, ${this.used} active, ${this.available.length} available)`);
+                    return context;
+                }
+                
+                // 如果没有可用上下文且未达到最大限制，创建新的
+                if ((this.used + this.available.length) < this.maxSize) {
+                    try {
+                        const context = await global.browser.createBrowserContext({
+                            // 优化上下文设置，减少资源占用
+                            ignoreHTTPSErrors: true,
+                        });
+                        
+                        this.used++;
+                        this.contextUsage.set(context, 1);
+                        console.log(`🆕 Created new context (${this.used} active, ${this.available.length} available, total: ${this.used + this.available.length})`);
+                        return context;
+                    } catch (e) {
+                        console.error("Failed to create browser context:", e.message);
+                        return null;
+                    }
+                }
+                
+                // 达到最大限制，等待可用上下文
+                console.log(`⏳ Context pool full, waiting for available context (${this.used} active, ${this.waitingQueue.length} waiting)`);
+                return new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        const index = this.waitingQueue.findIndex(item => item.resolve === resolve);
+                        if (index !== -1) {
+                            this.waitingQueue.splice(index, 1);
+                        }
+                        reject(new Error('Context pool timeout'));
+                    }, 30000); // 30秒超时
+                    
+                    this.waitingQueue.push({ resolve, reject, timeout });
+                });
+            },
+            
+            async releaseContext(context) {
+                if (!context) return;
+                
+                this.used = Math.max(0, this.used - 1);
+                
+                // 检查是否有等待的请求
+                if (this.waitingQueue.length > 0) {
+                    try {
+                        // 清理页面但保留上下文给等待的请求
+                        const pages = await context.pages();
+                        await Promise.all(pages.map(page => page.close().catch(() => {})));
+                        
+                        const waitingRequest = this.waitingQueue.shift();
+                        clearTimeout(waitingRequest.timeout);
+                        
+                        this.used++;
+                        const usage = this.contextUsage.get(context) || 0;
+                        this.contextUsage.set(context, usage + 1);
+                        
+                        console.log(`🚀 Context passed to waiting request (${this.used} active, ${this.waitingQueue.length} waiting)`);
+                        waitingRequest.resolve(context);
+                        return;
+                    } catch (e) {
+                        console.error("Error transferring context to waiting request:", e.message);
+                        // 失败的话，处理等待的请求
+                        if (this.waitingQueue.length > 0) {
+                            const waitingRequest = this.waitingQueue.shift();
+                            clearTimeout(waitingRequest.timeout);
+                            waitingRequest.reject(new Error('Context transfer failed'));
+                        }
+                    }
+                }
+                
+                // 检查上下文是否过度使用，如果是则替换
+                const usage = this.contextUsage.get(context) || 0;
+                if (usage > 100) { // 使用超过100次就替换
+                    try {
+                        this.contextUsage.delete(context);
+                        await context.close();
+                        console.log(`🔄 Context recycled due to high usage (${usage} uses)`);
+                        
+                        // 创建新的上下文补充池子
+                        if (this.available.length < Math.floor(this.maxSize / 2)) {
+                            const newContext = await global.browser.createBrowserContext({
+                                ignoreHTTPSErrors: true,
+                            });
+                            this.contextUsage.set(newContext, 0);
+                            this.available.push(newContext);
+                            console.log(`🆕 New context created to replace recycled one`);
+                        }
+                        return;
+                    } catch (e) {
+                        console.error("Error recycling context:", e.message);
+                    }
+                }
+                
+                // 正常情况下，返回到池子
+                try {
+                    // 清理页面但保留上下文
+                    const pages = await context.pages();
+                    await Promise.all(pages.map(page => page.close().catch(() => {})));
+                    
+                    this.available.push(context);
+                    console.log(`♻️  Context returned to pool (usage: ${usage}, ${this.used} active, ${this.available.length} available)`);
+                } catch (e) {
+                    console.error("Error cleaning context for reuse:", e.message);
+                    // 清理失败，关闭上下文
+                    try {
+                        this.contextUsage.delete(context);
+                        await context.close();
+                        console.log(`🗑️  Context closed due to cleanup failure`);
+                    } catch (closeError) {
+                        console.error("Error closing context:", closeError.message);
+                    }
+                }
+            },
+            
+            async cleanup() {
+                // 清理所有池中的上下文
+                while (this.available.length > 0) {
+                    const context = this.available.pop();
+                    try {
+                        await context.close();
+                    } catch (e) {
+                        console.error("Error closing pooled context:", e.message);
+                    }
+                }
+                this.used = 0;
+                console.log('🧹 Context pool cleaned up');
+            }
+        }
 
         console.log('Launching the browser...')
 

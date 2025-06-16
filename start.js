@@ -16,7 +16,9 @@ const defaultConfig = {
     browserLimit: Number(process.env.BROWSER_LIMIT) || 25,
     timeOut: Number(process.env.TIMEOUT) || 60000,
     memoryCleanupInterval: Number(process.env.MEMORY_CLEANUP_INTERVAL) || 300000,
-    maxMemoryUsage: Number(process.env.MAX_MEMORY_USAGE) || 512
+    maxMemoryUsage: Number(process.env.MAX_MEMORY_USAGE) || 512,
+    maxConcurrentRequests: Number(process.env.MAX_CONCURRENT_REQUESTS) || 60,
+    contextPoolSize: Number(process.env.CONTEXT_POOL_SIZE) || 20
 };
 
 // 解析命令行参数
@@ -51,6 +53,8 @@ CF Clearance Scraper 启动脚本
   --timeOut=60000               请求超时时间(毫秒) (默认: 60000)
   --memoryCleanupInterval=300000 内存清理间隔(毫秒) (默认: 300000)
   --maxMemoryUsage=512          最大内存使用(MB) (默认: 512)
+  --maxConcurrentRequests=60    最大并发请求数 (默认: 60)
+  --contextPoolSize=20          浏览器上下文池大小 (默认: 20)
   --authToken=your_token        API认证令牌 (可选)
   --help                        显示此帮助信息
 
@@ -84,8 +88,17 @@ function startService(config) {
     // 设置环境变量
     const env = { ...process.env, ...config };
     
-    // 启动主服务
-    const child = spawn('node', ['src/index.js'], {
+    // 启动主服务 - 添加内存限制参数
+    const nodeArgs = [
+        `--max-old-space-size=${config.maxMemoryUsage}`,
+        '--expose-gc',
+        'src/index.js'
+    ];
+    
+    console.log('Node启动参数:', nodeArgs);
+    console.log('');
+    
+    const child = spawn('node', nodeArgs, {
         env,
         stdio: 'inherit',
         cwd: __dirname
