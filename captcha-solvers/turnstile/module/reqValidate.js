@@ -10,7 +10,7 @@ const schema = {
         // 新的参数格式
         "type": {
             "type": "string",
-            "enum": ["cftoken"]
+            "enum": ["cftoken", "cfcookie"]
         },
         "websiteUrl": {
             "type": "string",
@@ -22,7 +22,7 @@ const schema = {
         // 兼容旧的参数格式
         "mode": {
             "type": "string",
-            "enum": ["source", "turnstile-min", "turnstile-max", "waf-session"]
+            "enum": ["source", "turnstile-min", "turnstile-max", "waf-session", "cfcookie"]
         },
         "url": {
             "type": "string",
@@ -47,10 +47,17 @@ const schema = {
     },
     "anyOf": [
         {
-            // 新格式验证
+            // 新格式验证 - cftoken
             "required": ["type", "websiteUrl", "websiteKey"],
             "properties": {
                 "type": { "const": "cftoken" }
+            }
+        },
+        {
+            // 新格式验证 - cfcookie
+            "required": ["type", "websiteUrl"],
+            "properties": {
+                "type": { "const": "cfcookie" }
             }
         },
         {

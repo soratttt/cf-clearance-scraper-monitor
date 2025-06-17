@@ -59,6 +59,7 @@ const getSource = require('../captcha-solvers/turnstile/endpoints/getSource')
 const solveTurnstileMin = require('../captcha-solvers/turnstile/endpoints/solveTurnstile.min')
 const solveTurnstileMax = require('../captcha-solvers/turnstile/endpoints/solveTurnstile.max')
 const wafSession = require('../captcha-solvers/turnstile/endpoints/wafSession')
+const getCfClearance = require('../captcha-solvers/turnstile/endpoints/cfcookieService')
 const { solveHcaptcha } = require('./endpoints/captcha')
 
 
@@ -70,7 +71,7 @@ app.post('/', async (req, res) => {
         if (!type) {
             return res.status(400).json({
                 code: 400,
-                message: 'Missing required parameter: type. Supported types: cftoken, hcaptcha',
+                message: 'Missing required parameter: type. Supported types: cftoken, hcaptcha, cfcookie',
                 token: null
             });
         }
@@ -82,10 +83,13 @@ app.post('/', async (req, res) => {
             case 'hcaptcha':
                 return await solveHcaptcha(req, res);
             
+            case 'cfcookie':
+                return await handleCfcookieRequest(req, res);
+            
             default:
                 return res.status(400).json({
                     code: 400,
-                    message: `Unsupported type: ${type}. Supported types: cftoken, hcaptcha`,
+                    message: `Unsupported type: ${type}. Supported types: cftoken, hcaptcha, cfcookie`,
                     token: null
                 });
         }
@@ -125,6 +129,30 @@ async function handleCftokenRequest(req, res) {
         url: data.websiteUrl,
         siteKey: data.websiteKey,
         mode: 'turnstile-min',
+        authToken: data.authToken
+    };
+
+    // 处理请求
+    return handleClearanceRequest(req, res, internalData);
+}
+
+// 处理 cfcookie 请求
+async function handleCfcookieRequest(req, res) {
+    const data = req.body;
+
+    // 参数验证
+    if (!data.websiteUrl) {
+        return res.status(400).json({ 
+            code: 400, 
+            message: 'websiteUrl is required',
+            cf_clearance: null 
+        });
+    }
+
+    // 转换为内部格式
+    const internalData = {
+        url: data.websiteUrl,
+        mode: 'cfcookie',
         authToken: data.authToken
     };
 
@@ -201,6 +229,9 @@ async function handleClearanceRequest(req, res, data) {
             break;
         case "waf-session":
             result = await wafSession(data).then(res => { return { ...res, code: 200 } }).catch(err => { return { code: 500, message: err.message } })
+            break;
+        case "cfcookie":
+            result = await getCfClearance(data).then(res => { return { cf_clearance: res, code: 200 } }).catch(err => { return { code: 500, message: err.message } })
             break;
     }
 

@@ -2,105 +2,20 @@
 
 ## API 端点
 
-本服务支持多种API格式，完全兼容：
+**统一API端点**: `POST /`
 
-### 格式一 - 传统格式
-- **端点**: `POST /cf-clearance-scraper`
-- **参数**: `url`, `siteKey`, `mode`
-- **特性**: 支持代理配置，完整功能
+支持的服务类型：
+- `cftoken` - Cloudflare Turnstile 令牌生成
+- `hcaptcha` - hCaptcha 验证码解决
+- `cfcookie` - 获取 cf_clearance Cookie
 
-### 格式二 - 统一格式  
-- **端点**: `POST /`
-- **参数**: `type`, `websiteUrl`, `websiteKey`
-- **响应**: `{code: 200, message: "success", token: "xxx"}`
-- **特性**: 标准化响应格式，更易集成
+**标准响应格式**: `{code: 200, message: "success", token/cf_clearance: "xxx"}`
 
 ## Cloudflare 功能
 
-### 1. 获取页面源码
+### 1. 生成 Turnstile 令牌
 
-获取受 Cloudflare WAF 保护网站的页面源码：
-
-```javascript
-const response = await fetch('http://localhost:3000/cf-clearance-scraper', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        url: 'https://example.com',
-        mode: 'source'
-    })
-});
-
-const result = await response.json();
-console.log(result.source); // 页面源码
-```
-
-### 2. 创建 Turnstile 令牌 (轻量级)
-
-使用最少资源生成 Turnstile 令牌：
-
-```javascript
-const response = await fetch('http://localhost:3000/cf-clearance-scraper', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        url: 'https://turnstile.zeroclover.io/',
-        siteKey: '0x4AAAAAAAEwzhD6pyKkgXC0',
-        mode: 'turnstile-min'
-    })
-});
-
-const result = await response.json();
-console.log(result.token); // Turnstile 令牌
-```
-
-### 3. 创建 Turnstile 令牌 (完整页面)
-
-加载完整页面并生成 Turnstile 令牌：
-
-```javascript
-const response = await fetch('http://localhost:3000/cf-clearance-scraper', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        url: 'https://turnstile.zeroclover.io/',
-        mode: 'turnstile-max'
-    })
-});
-
-const result = await response.json();
-console.log(result.token); // Turnstile 令牌
-```
-
-### 4. 创建 WAF 会话
-
-创建可重复使用的 Cloudflare WAF 会话：
-
-```javascript
-const session = await fetch('http://localhost:3000/cf-clearance-scraper', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        url: 'https://nopecha.com/demo/cloudflare',
-        mode: 'waf-session'
-    })
-}).then(res => res.json());
-
-// 使用会话信息发送后续请求
-const cookies = session.cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
-```
-
-### 5. 新版 API 格式示例
-
-使用新版 API 格式创建 Turnstile 令牌：
+生成 Cloudflare Turnstile 验证令牌：
 
 ```javascript
 const response = await fetch('http://localhost:3000/', {
@@ -116,8 +31,37 @@ const response = await fetch('http://localhost:3000/', {
 });
 
 const result = await response.json();
-console.log(result.token); // Turnstile 令牌
-console.log(result.code);  // 200
+if (result.code === 200) {
+    console.log('Turnstile token:', result.token);
+} else {
+    console.error('Error:', result.message);
+}
+```
+
+### 2. 获取 cf_clearance Cookie
+
+获取 Cloudflare 防护页面的 cf_clearance cookie：
+
+```javascript
+const response = await fetch('http://localhost:3000/', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        type: "cfcookie",
+        websiteUrl: "https://example.com"
+    })
+});
+
+const result = await response.json();
+if (result.code === 200) {
+    console.log('cf_clearance:', result.cf_clearance);
+    // 使用 cookie 进行后续请求
+    const cookieHeader = `cf_clearance=${result.cf_clearance}`;
+} else {
+    console.error('Error:', result.message);
+}
 ```
 
 ## hCaptcha 功能
@@ -168,6 +112,13 @@ const response = await fetch('http://localhost:3000/', {
         }
     })
 });
+
+const result = await response.json();
+if (result.code === 200) {
+    console.log('hCaptcha solved with proxy!');
+    console.log('Token:', result.token);
+}
+```
 ```
 
 ### hCaptcha 测试脚本
@@ -186,17 +137,18 @@ node test_hcaptcha.js
 
 ## 代理支持
 
-所有模式都支持代理配置：
+所有服务类型都支持代理配置：
 
 ```javascript
 {
-    url: 'https://example.com',
-    mode: 'source',
+    type: "cftoken", // 或 "hcaptcha", "cfcookie"
+    websiteUrl: "https://example.com",
+    websiteKey: "your-site-key", // cftoken 和 hcaptcha 需要
     proxy: {
-        host: '127.0.0.1',
+        host: "127.0.0.1",
         port: 8080,
-        username: 'user', // 可选
-        password: 'pass'  // 可选
+        username: "user", // 可选
+        password: "pass"  // 可选
     }
 }
 ```
@@ -207,9 +159,9 @@ node test_hcaptcha.js
 
 ```javascript
 {
-    type: "cftoken",
+    type: "cftoken", // 或 "hcaptcha", "cfcookie"
     websiteUrl: "https://example.com",
-    websiteKey: "your-site-key",
+    websiteKey: "your-site-key", // cftoken 和 hcaptcha 需要
     authToken: "your-auth-token"
 }
 ```
@@ -221,11 +173,9 @@ node test_hcaptcha.js
 ```json
 {
     "code": 200,
-    "source": "页面源码...",           // source 模式
-    "token": "turnstile_token...",    // turnstile/hcaptcha 模式
-    "message": "success",             // 成功消息
-    "headers": {...},                 // waf-session 模式
-    "cookies": [...]                  // waf-session 模式
+    "token": "turnstile_token...",      // cftoken/hcaptcha 类型
+    "cf_clearance": "cookie_value...", // cfcookie 类型
+    "message": "success"               // 可选成功消息
 }
 ```
 
@@ -333,6 +283,123 @@ async function solve_with_retry(websiteUrl, websiteKey, maxRetries = 3) {
     
     throw new Error('All retry attempts failed');
 }
+```
+
+## 完整示例
+
+### 获取 cf_clearance 并使用
+
+```javascript
+async function getCfClearanceAndUse(targetUrl) {
+    // 1. 获取 cf_clearance cookie
+    const response = await fetch('http://localhost:3000/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: "cfcookie",
+            websiteUrl: targetUrl
+        })
+    });
+    
+    const result = await response.json();
+    if (result.code !== 200) {
+        throw new Error(`Failed to get cf_clearance: ${result.message}`);
+    }
+    
+    // 2. 使用 cf_clearance 访问目标网站
+    const siteResponse = await fetch(targetUrl, {
+        headers: {
+            'Cookie': `cf_clearance=${result.cf_clearance}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+    });
+    
+    return await siteResponse.text();
+}
+
+// 使用示例
+getCfClearanceAndUse('https://example.com')
+    .then(html => console.log('页面内容获取成功'))
+    .catch(err => console.error('获取失败:', err));
+```
+
+### 批量处理多个站点
+
+```javascript
+async function solveBatchCaptchas(sites) {
+    const requests = sites.map(site => 
+        fetch('http://localhost:3000/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: site.type, // "cftoken", "hcaptcha", "cfcookie"
+                websiteUrl: site.url,
+                websiteKey: site.key // 如果需要
+            })
+        }).then(res => res.json())
+    );
+    
+    const results = await Promise.all(requests);
+    return results.map((result, index) => ({
+        site: sites[index].url,
+        success: result.code === 200,
+        data: result.token || result.cf_clearance || null,
+        error: result.message
+    }));
+}
+
+// 使用示例
+const sites = [
+    { type: "cftoken", url: "https://site1.com", key: "key1" },
+    { type: "hcaptcha", url: "https://site2.com", key: "key2" },
+    { type: "cfcookie", url: "https://site3.com" }
+];
+
+solveBatchCaptchas(sites)
+    .then(results => console.log('批量处理结果:', results));
+```
+
+### 错误重试机制
+
+```javascript
+async function solveWithRetry(params, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch('http://localhost:3000/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            });
+            
+            const result = await response.json();
+            if (result.code === 200) {
+                return result;
+            }
+            
+            console.log(`Attempt ${i + 1} failed: ${result.message}`);
+        } catch (error) {
+            console.log(`Attempt ${i + 1} error: ${error.message}`);
+        }
+        
+        // 等待重试
+        if (i < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+    }
+    
+    throw new Error('All retry attempts failed');
+}
+
+// 使用示例
+solveWithRetry({
+    type: "cftoken",
+    websiteUrl: "https://example.com",
+    websiteKey: "your-site-key"
+}, 3).then(result => {
+    console.log('成功获取token:', result.token);
+}).catch(err => {
+    console.error('重试失败:', err);
+});
 ```
 
 ## 健康检查
