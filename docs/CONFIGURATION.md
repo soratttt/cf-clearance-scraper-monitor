@@ -52,13 +52,18 @@ VIEWPORT_HEIGHT=240
 BROWSER_CONNECT_TIMEOUT=120000
 ```
 
-### 监控配置
+### 监控和告警配置
 
 ```bash
 # 监控数据保留数量
 MAX_RECENT_TOKENS=50
 MAX_REQUEST_HISTORY=100
 MEMORY_MONITOR_INTERVAL=30000
+
+# 告警阈值
+ALERT_SUCCESS_RATE_THRESHOLD=90    # 成功率低于90%告警
+ALERT_MEMORY_THRESHOLD=0.8         # 内存使用超过80%告警
+ALERT_RESPONSE_TIME_THRESHOLD=60000 # 响应时间超过60秒告警
 ```
 
 ### 安全配置
@@ -115,8 +120,24 @@ TIMEOUT=180000
 - **LOG_LEVEL**: 设为CRITICAL可减少输出，提高性能
 
 ### 4. 监控配置
-- 访问 `http://localhost:3000/monitor` 查看实时状态
+- **监控面板**: 访问 `http://localhost:3000/monitor` 查看实时状态
+- **监控API**: `GET /api/monitor` 获取监控数据
+- **健康检查**: `GET /health` 检查服务状态
 - **MAX_RECENT_TOKENS**: 控制内存中保留的token数量
+- **告警设置**: 配置性能阈值，及时发现异常
+
+### 5. reCAPTCHA配置
+
+```bash
+# reCAPTCHA v2 音频处理 (需要FFmpeg)
+RECAPTCHA_V2_AUDIO_ENABLED=true
+
+# reCAPTCHA v2 图像处理 (使用Gemini API)
+RECAPTCHA_V2_IMAGE_ENABLED=true
+
+# reCAPTCHA v3 网络监听
+RECAPTCHA_V3_ENABLED=true
+```
 
 ## 配置优先级
 
@@ -167,10 +188,68 @@ npm run start:light    # 轻量模式 (browserLimit=5)
 - 调整 `MAX_CONCURRENT_REQUESTS`
 - 根据服务器负载能力设置合理值
 
+## 监控功能
+
+### 实时监控面板
+
+访问 `http://localhost:3000/monitor` 查看：
+- **服务状态**: 运行时间、实例使用情况
+- **请求统计**: 总计/成功/失败/活跃请求数
+- **性能指标**: 响应时间趋势、成功率变化
+- **内存监控**: 堆内存使用、RSS、外部内存
+- **实时日志**: 请求处理过程和状态
+
+### 监控API
+
+```bash
+# 获取完整监控数据
+GET /api/monitor
+
+# 重置监控统计
+POST /api/monitor/reset
+
+# 服务健康检查
+GET /health
+```
+
+### 性能分析
+
+监控面板提供：
+- **响应时间分析**: 平均/最大/最小响应时间
+- **服务类型对比**: 不同验证码类型的成功率
+- **实时图表**: 动态显示性能趋势
+- **活跃请求**: 当前处理中的请求详情
+
+### 自定义监控
+
+```javascript
+// 获取监控数据
+async function getMonitorData() {
+    const response = await fetch('/api/monitor');
+    const data = await response.json();
+    return data;
+}
+
+// 性能检查
+function checkPerformance() {
+    getMonitorData().then(data => {
+        console.log(`成功率: ${data.requests.successRate}%`);
+        console.log(`活跃请求: ${data.requests.active}`);
+        console.log(`内存使用: ${data.memory.heapUsagePercent * 100}%`);
+        
+        // 警告检查
+        if (data.requests.successRate < 90) {
+            console.warn('⚠️ 成功率过低！');
+        }
+    });
+}
+```
+
 ## 配置文件位置
 
 - **主配置**: `/cf-clearance-scraper/.env`
 - **监控面板**: `http://localhost:3000/monitor`
+- **API文档**: `http://localhost:3000/api/monitor`
 - **健康检查**: `http://localhost:3000/health`
 
 ## 兼容性说明

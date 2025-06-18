@@ -118,6 +118,29 @@ class MemoryManager {
         }
     }
 
+    forceCleanup() {
+        console.log('🔧 执行强制内存清理...');
+        
+        // 强制垃圾回收
+        this.forceGarbageCollection();
+        
+        // 清理浏览器上下文
+        this.cleanupBrowserContexts();
+        
+        // 额外的清理步骤
+        if (global.gc) {
+            // 多次调用GC确保彻底清理
+            setTimeout(() => {
+                try {
+                    global.gc();
+                    console.log('✅ 延迟GC完成');
+                } catch (e) {}
+            }, 1000);
+        }
+        
+        console.log('✅ 强制内存清理完成');
+    }
+
     getCpuUsage() {
         const cpus = os.cpus();
         const numCpus = cpus.length;

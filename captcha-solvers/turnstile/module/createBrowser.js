@@ -3,6 +3,10 @@ const { connect } = require("puppeteer-real-browser")
 async function createBrowser(options = {}) {
     try {
         if (global.finished === true) return
+        if (global.restarting === true) {
+            console.log('Skipping browser creation during restart...')
+            return
+        }
 
         if (global.browser) {
             try {
@@ -194,6 +198,11 @@ async function createBrowser(options = {}) {
 
         if (!browser) {
             console.error("Failed to connect to browser")
+            // 检查是否在重启中，如果是则不重试
+            if (global.restarting === true) {
+                console.log('Browser connection failed during restart, skipping retry...')
+                return
+            }
             // 延迟重试
             setTimeout(createBrowser, 5000)
             return
@@ -246,6 +255,11 @@ async function createBrowser(options = {}) {
 
         browser.on('disconnected', async () => {
             if (global.finished === true) return
+            if (global.restarting === true) {
+                console.log('Browser disconnected during restart, skipping reconnect...')
+                return
+            }
+            
             console.log('Browser disconnected, attempting to reconnect...')
             
             try {
@@ -268,6 +282,10 @@ async function createBrowser(options = {}) {
     } catch (e) {
         console.error("Browser creation error:", e.message)
         if (global.finished === true) return
+        if (global.restarting === true) {
+            console.log('Browser creation error during restart, skipping retry...')
+            return
+        }
         await new Promise(resolve => setTimeout(resolve, 5000))
         await createBrowser()
     }

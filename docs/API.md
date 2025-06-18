@@ -2,11 +2,13 @@
 
 ## API 端点
 
-**统一API端点**: `POST /`
+**统一API端点**: `POST /solve`
 
 支持的服务类型：
 - `cftoken` - Cloudflare Turnstile 令牌生成
 - `hcaptcha` - hCaptcha 验证码解决
+- `recaptchav2` - reCAPTCHA v2 验证码解决
+- `recaptchav3` - reCAPTCHA v3 验证码解决
 - `cfcookie` - 获取 cf_clearance Cookie
 
 **标准响应格式**: `{code: 200, message: "success", token/cf_clearance: "xxx"}`
@@ -64,14 +66,18 @@ if (result.code === 200) {
 }
 ```
 
-## hCaptcha 功能
+## 验证码解决功能
 
-### 基本用法
+### hCaptcha 解决
 
-解决 hCaptcha 验证码：
+**环境要求**:
+- Google Gemini API Key
+- Python 3.8+ 和 Playwright
+
+**基本用法**:
 
 ```javascript
-const response = await fetch('http://localhost:3000/', {
+const response = await fetch('http://localhost:3000/solve', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -92,48 +98,70 @@ if (result.code === 200) {
 }
 ```
 
-### 带代理的 hCaptcha
+### reCAPTCHA v2 解决
+
+**环境要求**:
+- FFmpeg (音频挑战)
+- Gemini API Key (图像挑战)
 
 ```javascript
-const response = await fetch('http://localhost:3000/', {
+const response = await fetch('http://localhost:3000/solve', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        type: "hcaptcha",
-        websiteUrl: "https://accounts.hcaptcha.com/demo",
-        websiteKey: "338af34c-7bcb-4c7c-900b-acbec73d7d43",
-        proxy: {
-            host: "127.0.0.1",
-            port: 8080,
-            username: "user", // 可选
-            password: "pass"  // 可选
-        }
+        type: "recaptchav2",
+        websiteUrl: "https://example.com",
+        websiteKey: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-",
+        method: "audio" // 或 "image"
     })
 });
 
 const result = await response.json();
 if (result.code === 200) {
-    console.log('hCaptcha solved with proxy!');
+    console.log('reCAPTCHA v2 solved!');
     console.log('Token:', result.token);
+    console.log('Challenge Type:', result.challengeType);
+    console.log('Solve Time:', result.solveTime);
 }
 ```
+
+### reCAPTCHA v3 解决
+
+**环境要求**: 无额外依赖
+
+```javascript
+const response = await fetch('http://localhost:3000/solve', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        type: "recaptchav3",
+        websiteUrl: "https://example.com",
+        websiteKey: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-",
+        pageAction: "submit"
+    })
+});
+
+const result = await response.json();
+if (result.code === 200) {
+    console.log('reCAPTCHA v3 solved!');
+    console.log('Token:', result.token);
+    console.log('Score:', result.score);
+    console.log('Solve Time:', result.solveTime);
+}
 ```
 
-### hCaptcha 测试脚本
+### 性能对比
 
-使用内置测试脚本：
-
-```bash
-node test_hcaptcha.js
-```
-
-测试脚本会：
-- 检查服务状态
-- 发送hCaptcha解决请求
-- 验证响应格式
-- 显示性能数据
+| 验证码类型 | 平均解决时间 | 成功率 | 环境要求 |
+|-----------|------------|--------|----------|
+| hCaptcha | 20-60秒 | 85-95% | Gemini API + Python |
+| reCAPTCHA v2 (音频) | 30-50秒 | 85-95% | FFmpeg + 语音识别 |
+| reCAPTCHA v2 (图像) | 30-50秒 | 80-90% | Gemini API |
+| reCAPTCHA v3 | 30-50秒 | 95-99% | 目前还需要定制网站才行 |
 
 ## 代理支持
 

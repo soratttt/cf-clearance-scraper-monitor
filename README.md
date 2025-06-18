@@ -32,6 +32,8 @@
 |---------|---------|------|
 | **Cloudflare Turnstile** | ✅ | 支持轻量级和完整页面模式 |
 | **hCaptcha 自动解决** | ✅ | 基于 Google Gemini AI 模型 |
+| **reCAPTCHA v2** | ✅ | 支持音频和图像挑战解决 |
+| **reCAPTCHA v3** | ✅ | 支持网络监听和分数优化 |
 | **实时监控面板** | ✅ | 服务状态和性能指标监控 |
 | **代理支持** | ✅ | HTTP/HTTPS 代理配置 |
 
@@ -39,11 +41,9 @@
 
 | 文档 | 功能说明 | 适用场景 |
 |------|---------|----------|
-| [📦 安装指南](docs/INSTALLATION.md) | 一键部署和手动安装步骤 | 初次使用 |
-| [⚙️ 配置指南](docs/CONFIGURATION.md) | 统一配置系统和参数调优 | 环境配置 |
-| [🔧 API 文档](docs/API.md) | 完整的接口使用说明和示例 | 开发集成 |
-| [🤖 hCaptcha 指南](docs/HCAPTCHA.md) | AI验证码解决方案详解 | 验证码处理 |
-| [📊 监控指南](docs/MONITORING.md) | 实时监控面板和性能分析 | 运维管理 |
+| [📦 部署文档](docs/INSTALLATION.md) | 一键部署和手动安装步骤 | 初次使用 |
+| [🔧 API文档](docs/API.md) | 完整的接口使用说明和示例 | 开发集成 |
+| [⚙️ 配置指南](docs/CONFIGURATION.md) | 统一配置系统、参数调优和监控 | 环境配置 |
 | [🛠️ 故障排除](docs/TROUBLESHOOTING.md) | 常见问题诊断和解决方案 | 问题解决 |
 
 ## 免责声明

@@ -10,7 +10,7 @@ const schema = {
         // 新的参数格式
         "type": {
             "type": "string",
-            "enum": ["cftoken", "cfcookie"]
+            "enum": ["cftoken", "cfcookie", "recaptchav2", "recaptchav3"]
         },
         "websiteUrl": {
             "type": "string",
@@ -22,7 +22,7 @@ const schema = {
         // 兼容旧的参数格式
         "mode": {
             "type": "string",
-            "enum": ["source", "turnstile-min", "turnstile-max", "waf-session", "cfcookie"]
+            "enum": ["source", "turnstile-min", "turnstile-max", "waf-session", "cfcookie", "recaptchav2", "recaptchav3"]
         },
         "url": {
             "type": "string",
@@ -43,6 +43,18 @@ const schema = {
         },
         "authToken": {
             "type": "string"
+        },
+        // reCAPTCHA 特有参数
+        "language": {
+            "type": "string",
+            "enum": ["en", "es", "fr", "de", "pt", "ru", "it", "nl", "pl"]
+        },
+        "method": {
+            "type": "string",
+            "enum": ["audio", "image"]
+        },
+        "action": {
+            "type": "string"
         }
     },
     "anyOf": [
@@ -58,6 +70,20 @@ const schema = {
             "required": ["type", "websiteUrl"],
             "properties": {
                 "type": { "const": "cfcookie" }
+            }
+        },
+        {
+            // 新格式验证 - recaptchav2
+            "required": ["type", "websiteUrl", "websiteKey"],
+            "properties": {
+                "type": { "const": "recaptchav2" }
+            }
+        },
+        {
+            // 新格式验证 - recaptchav3
+            "required": ["type", "websiteUrl", "websiteKey"],
+            "properties": {
+                "type": { "const": "recaptchav3" }
             }
         },
         {
