@@ -1,6 +1,5 @@
 const Ajv = require("ajv")
 const addFormats = require("ajv-formats")
-
 const ajv = new Ajv()
 addFormats(ajv)
 
@@ -10,7 +9,7 @@ const schema = {
         // 新的参数格式
         "type": {
             "type": "string",
-            "enum": ["cftoken", "cfcookie", "recaptchav2", "recaptchav3"]
+            "enum": ["cftoken", "cfcookie", "recaptchav2", "recaptchav3", "waf-session"] // 添加 waf-session
         },
         "websiteUrl": {
             "type": "string",
@@ -55,6 +54,16 @@ const schema = {
         },
         "action": {
             "type": "string"
+        },
+        // WAF Session 特有参数
+        "pageAction": {
+            "type": "string"
+        },
+        "userAgent": {
+            "type": "string"
+        },
+        "timeout": {
+            "type": "number"
         }
     },
     "anyOf": [
@@ -87,6 +96,13 @@ const schema = {
             }
         },
         {
+            // 新格式验证 - waf-session
+            "required": ["type", "websiteUrl"],
+            "properties": {
+                "type": { "const": "waf-session" }
+            }
+        },
+        {
             // 旧格式验证
             "required": ["mode", "url"]
         }
@@ -100,6 +116,13 @@ const schema = {
 //     type: "cftoken",
 //     websiteUrl: "https://example.com",
 //     websiteKey: "0x4AAAAAABA4JXCaw9E2Py-9"
+// }
+//
+// WAF Session format:
+// const data = {
+//     type: "waf-session",
+//     websiteUrl: "https://stake.krd",
+//     authToken: "your-token"
 // }
 // 
 // Old format (still supported):
@@ -115,7 +138,6 @@ const schema = {
 //     },
 //     authToken: "123456"
 // }
-
 
 function validate(data) {
     const valid = ajv.validate(schema, data)
