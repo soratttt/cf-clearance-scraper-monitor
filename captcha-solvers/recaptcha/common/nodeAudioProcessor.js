@@ -23,7 +23,7 @@ class NodeAudioProcessor {
     if (this.initialized) return;
 
     try {
-      console.log('🔧 初始化 Node.js 音频处理器...');
+      console.log('[CONFIG] 初始化 Node.js 音频处理器...');
       
       // 初始化 FFmpeg.js
       await this._initializeFFmpeg();
@@ -32,9 +32,9 @@ class NodeAudioProcessor {
       await this._initializeWhisper();
       
       this.initialized = true;
-      console.log('✅ Node.js 音频处理器初始化完成');
+      console.log('[OK] Node.js 音频处理器初始化完成');
     } catch (error) {
-      console.error('❌ 音频处理器初始化失败:', error);
+      console.error('[FAIL] 音频处理器初始化失败:', error);
       throw new AudioTranscriptionError(`Audio processor initialization failed: ${error.message}`);
     }
   }
@@ -56,9 +56,9 @@ class NodeAudioProcessor {
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
       });
       
-      console.log('✅ FFmpeg.js 初始化完成');
+      console.log('[OK] FFmpeg.js 初始化完成');
     } catch (error) {
-      console.warn('⚠️  FFmpeg.js 初始化失败，回退到系统 FFmpeg');
+      console.warn('[WARN]  FFmpeg.js 初始化失败，回退到系统 FFmpeg');
       this.ffmpeg = null;
     }
   }
@@ -70,7 +70,7 @@ class NodeAudioProcessor {
     try {
       const { pipeline } = require('@xenova/transformers');
       
-      console.log('📥 加载 Whisper 模型（首次运行可能需要几分钟下载）...');
+      console.log('[RESPONSE] 加载 Whisper 模型（首次运行可能需要几分钟下载）...');
       
       // 使用较小的 Whisper 模型以节省内存和提高速度
       this.whisperPipeline = await pipeline(
@@ -79,9 +79,9 @@ class NodeAudioProcessor {
         { revision: 'main' }
       );
       
-      console.log('✅ Whisper 模型加载完成');
+      console.log('[OK] Whisper 模型加载完成');
     } catch (error) {
-      console.warn('⚠️  Whisper 模型加载失败，将使用备用识别方案');
+      console.warn('[WARN]  Whisper 模型加载失败，将使用备用识别方案');
       this.whisperPipeline = null;
     }
   }
@@ -103,7 +103,7 @@ class NodeAudioProcessor {
       }, audioUrl);
 
       const audioBuffer = Buffer.from(response);
-      console.log(`✅ 音频下载完成，大小: ${audioBuffer.length} bytes`);
+      console.log(`[OK] 音频下载完成，大小: ${audioBuffer.length} bytes`);
       
       return audioBuffer;
     } catch (error) {
@@ -121,7 +121,7 @@ class NodeAudioProcessor {
     }
 
     try {
-      console.log(`🔄 开始音频转换: ${inputFormat} → WAV`);
+      console.log(`[RESTART] 开始音频转换: ${inputFormat} → WAV`);
 
       if (this.ffmpeg) {
         // 使用 FFmpeg.js（WebAssembly 版本）
@@ -162,7 +162,7 @@ class NodeAudioProcessor {
       const wavData = await this.ffmpeg.readFile(outputFileName);
       const wavBuffer = Buffer.from(wavData);
 
-      console.log(`✅ FFmpeg.js 转换完成，WAV大小: ${wavBuffer.length} bytes`);
+      console.log(`[OK] FFmpeg.js 转换完成，WAV大小: ${wavBuffer.length} bytes`);
       return wavBuffer;
     } finally {
       // 清理临时文件
@@ -211,7 +211,7 @@ class NodeAudioProcessor {
             try {
               const wavBuffer = fs.readFileSync(outputPath);
               fs.unlinkSync(outputPath);
-              console.log(`✅ 系统 FFmpeg 转换完成，WAV大小: ${wavBuffer.length} bytes`);
+              console.log(`[OK] 系统 FFmpeg 转换完成，WAV大小: ${wavBuffer.length} bytes`);
               resolve(wavBuffer);
             } catch (error) {
               reject(new AudioTranscriptionError(`Failed to read converted audio: ${error.message}`));
@@ -247,13 +247,13 @@ class NodeAudioProcessor {
         // 使用 Whisper 模型
         const transcription = await this._transcribeWithWhisper(wavBuffer);
         if (transcription && transcription.trim().length > 0) {
-          console.log(`✅ Whisper 识别完成: "${transcription}"`);
+          console.log(`[OK] Whisper 识别完成: "${transcription}"`);
           return transcription.trim();
         }
       }
 
       // 回退到模拟识别
-      console.log('⚠️  Whisper 不可用，使用模拟识别结果');
+      console.log('[WARN]  Whisper 不可用，使用模拟识别结果');
       return await this._transcribeWithMockRecognition(wavBuffer, language);
 
     } catch (error) {
@@ -303,7 +303,7 @@ class NodeAudioProcessor {
    * 模拟语音识别（回退方案）
    */
   async _transcribeWithMockRecognition(wavBuffer, language) {
-    console.log('⚠️  使用模拟语音识别结果');
+    console.log('[WARN]  使用模拟语音识别结果');
     
     // 基于音频长度和特征生成更智能的模拟结果
     const audioLength = wavBuffer.length;

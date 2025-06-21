@@ -1,6 +1,6 @@
 <div align="center">
     <h1> hCaptcha Challenger</h1>
-    <p>🚀 Gracefully face hCaptcha challenge with multimodal large language model.</p>
+    <p>[START] Gracefully face hCaptcha challenge with multimodal large language model.</p>
     <img src="https://img.shields.io/pypi/v/hcaptcha-challenger?style=flat-square&logo=python&logoColor=white">
     <img src="https://img.shields.io/pypi/dw/hcaptcha-challenger?style=flat-square&logo=aiqfome&label=downloads%40PyPI">
     <a href="https://github.com/QIN2DIM/hcaptcha-challenger/releases"><img src="https://img.shields.io/github/downloads/QIN2DIM/hcaptcha-challenger/model/total?style=flat-square&logo=github"></a>
@@ -28,11 +28,11 @@ Just implement some interfaces to make `AI vs AI` possible.
 
 | Challenge Type                          | Pluggable Resource                                           | Agent Capability |
 | --------------------------------------- | ------------------------------------------------------------ | ---------------- |
-| `image_label_binary`                    | ResNet  ONNX classification [#220401](https://github.com/QIN2DIM/hcaptcha-challenger/issues?q=label%3A%22%F0%9F%94%A5+challenge%22+) | ✅                |
-| `image_label_area_select: point`        | YOLOv8 ONNX detection  [#230826](https://github.com/QIN2DIM/hcaptcha-challenger/issues/588) | ✅                |
+| `image_label_binary`                    | ResNet  ONNX classification [#220401](https://github.com/QIN2DIM/hcaptcha-challenger/issues?q=label%3A%22%F0%9F%94%A5+challenge%22+) | [OK]                |
+| `image_label_area_select: point`        | YOLOv8 ONNX detection  [#230826](https://github.com/QIN2DIM/hcaptcha-challenger/issues/588) | [OK]                |
 | `image_label_area_select: bounding box` | YOLOv8 ONNX segmentation  [#230828](https://github.com/QIN2DIM/hcaptcha-challenger/issues/592) | -                |
 | `image_label_multiple_choice`           | ViT ONNX zero-shot motion [#231109](https://github.com/QIN2DIM/hcaptcha-challenger/issues/917) | -                |
-| `image_drag_drop`                       | Spatial Chain-of-Thought [#250401](https://github.com/QIN2DIM/hcaptcha-challenger/issues/995) | ✅                |
+| `image_drag_drop`                       | Spatial Chain-of-Thought [#250401](https://github.com/QIN2DIM/hcaptcha-challenger/issues/995) | [OK]                |
 
 | Advanced Task               | Pluggable Resource                                           |
 | --------------------------- | ------------------------------------------------------------ |

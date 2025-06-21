@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🔍 hCaptcha 部署自检开始...${NC}"
+echo -e "${BLUE}[DEBUG] hCaptcha 部署自检开始...${NC}"
 echo
 
 # 检查当前目录 - 现在脚本在tests目录中
@@ -21,58 +21,58 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 if [ ! -f "package.json" ]; then
-    echo -e "${RED}❌ 错误: 无法找到项目根目录${NC}"
+    echo -e "${RED}[FAIL] 错误: 无法找到项目根目录${NC}"
     exit 1
 fi
 
 # 1. 检查 .env 文件
 echo -e "${YELLOW}[1/5] 检查环境配置...${NC}"
 if [ ! -f ".env" ]; then
-    echo -e "${RED}❌ .env 文件不存在${NC}"
+    echo -e "${RED}[FAIL] .env 文件不存在${NC}"
     exit 1
 fi
 
 # 检查 API 密钥
 if grep -q "GEMINI_API_KEY=your_actual_gemini_api_key_here" .env; then
-    echo -e "${RED}❌ Gemini API 密钥未配置${NC}"
-    echo -e "${YELLOW}💡 请编辑 .env 文件，设置正确的 GEMINI_API_KEY${NC}"
+    echo -e "${RED}[FAIL] Gemini API 密钥未配置${NC}"
+    echo -e "${YELLOW}[INFO] 请编辑 .env 文件，设置正确的 GEMINI_API_KEY${NC}"
     exit 1
 elif grep -q "GEMINI_API_KEY=AIza" .env; then
-    echo -e "${GREEN}✅ Gemini API 密钥已配置${NC}"
+    echo -e "${GREEN}[OK] Gemini API 密钥已配置${NC}"
 else
-    echo -e "${YELLOW}⚠️  请检查 GEMINI_API_KEY 配置格式${NC}"
+    echo -e "${YELLOW}[WARN]  请检查 GEMINI_API_KEY 配置格式${NC}"
 fi
 
 # 2. 检查 Node.js 依赖
 echo -e "${YELLOW}[2/5] 检查 Node.js 依赖...${NC}"
 if [ ! -d "node_modules" ]; then
-    echo -e "${RED}❌ node_modules 不存在，正在安装依赖...${NC}"
+    echo -e "${RED}[FAIL] node_modules 不存在，正在安装依赖...${NC}"
     npm install
 fi
-echo -e "${GREEN}✅ Node.js 依赖检查完成${NC}"
+echo -e "${GREEN}[OK] Node.js 依赖检查完成${NC}"
 
 # 3. 检查 Python 环境
 echo -e "${YELLOW}[3/5] 检查 Python 环境...${NC}"
 HCAPTCHA_DIR="captcha-solvers/hcaptcha"
 if [ ! -d "$HCAPTCHA_DIR/venv" ]; then
-    echo -e "${RED}❌ Python 虚拟环境不存在${NC}"
-    echo -e "${YELLOW}💡 请运行一键部署脚本安装 Python 环境${NC}"
+    echo -e "${RED}[FAIL] Python 虚拟环境不存在${NC}"
+    echo -e "${YELLOW}[INFO] 请运行一键部署脚本安装 Python 环境${NC}"
     exit 1
 fi
 
 # 检查 Python 包
 cd "$HCAPTCHA_DIR"
 if source venv/bin/activate 2>/dev/null && python -c "import hcaptcha_challenger" 2>/dev/null; then
-    echo -e "${GREEN}✅ hcaptcha-challenger 已安装${NC}"
+    echo -e "${GREEN}[OK] hcaptcha-challenger 已安装${NC}"
 else
-    echo -e "${RED}❌ hcaptcha-challenger 未正确安装${NC}"
+    echo -e "${RED}[FAIL] hcaptcha-challenger 未正确安装${NC}"
     exit 1
 fi
 
 if source venv/bin/activate 2>/dev/null && python -c "from playwright.async_api import async_playwright" 2>/dev/null; then
-    echo -e "${GREEN}✅ Playwright 已安装${NC}"
+    echo -e "${GREEN}[OK] Playwright 已安装${NC}"
 else
-    echo -e "${RED}❌ Playwright 未正确安装${NC}"
+    echo -e "${RED}[FAIL] Playwright 未正确安装${NC}"
     exit 1
 fi
 cd - > /dev/null
@@ -85,19 +85,19 @@ if [ -z "$PORT" ]; then
 fi
 
 if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null ; then
-    echo -e "${GREEN}✅ 服务已在端口 $PORT 运行${NC}"
+    echo -e "${GREEN}[OK] 服务已在端口 $PORT 运行${NC}"
     SERVICE_RUNNING=true
 else
-    echo -e "${YELLOW}⚠️  端口 $PORT 未被占用，服务可能未启动${NC}"
+    echo -e "${YELLOW}[WARN]  端口 $PORT 未被占用，服务可能未启动${NC}"
     SERVICE_RUNNING=false
 fi
 
 # 5. 提供测试命令
 echo -e "${YELLOW}[5/5] 生成测试命令...${NC}"
 echo
-echo -e "${BLUE}📋 部署检查完成！${NC}"
+echo -e "${BLUE}[LIST] 部署检查完成！${NC}"
 echo
-echo -e "${GREEN}🧪 测试命令:${NC}"
+echo -e "${GREEN}[TEST] 测试命令:${NC}"
 echo -e "  ${BLUE}完整测试:${NC} node tests/test_hcaptcha_deployment.js"
 echo -e "  ${BLUE}快速测试:${NC} node tests/quick_test.js"
 if [ "$SERVICE_RUNNING" = true ]; then
@@ -106,7 +106,7 @@ else
     echo -e "  ${YELLOW}请先启动服务:${NC} npm start"
 fi
 echo
-echo -e "${BLUE}🌐 访问地址:${NC}"
+echo -e "${BLUE}[NETWORK] 访问地址:${NC}"
 echo -e "  ${BLUE}本地:${NC} http://localhost:$PORT"
 echo -e "  ${BLUE}监控:${NC} http://localhost:$PORT/monitor"
 
@@ -128,7 +128,7 @@ fi
 
 echo
 if [ "$SERVICE_RUNNING" = true ]; then
-    echo -e "${GREEN}🎉 部署检查通过！可以开始使用 hCaptcha 解决器${NC}"
+    echo -e "${GREEN}[SUCCESS] 部署检查通过！可以开始使用 hCaptcha 解决器${NC}"
 else
-    echo -e "${YELLOW}⚠️  服务未运行，请启动服务后进行测试${NC}"
+    echo -e "${YELLOW}[WARN]  服务未运行，请启动服务后进行测试${NC}"
 fi

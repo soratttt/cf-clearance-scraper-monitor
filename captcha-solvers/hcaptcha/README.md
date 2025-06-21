@@ -1,13 +1,13 @@
 # hCaptcha 解决器
 
-🚀 基于 hcaptcha-challenger 的强大 hCaptcha 解决方案，使用本机环境安装，简化部署流程。
+[START] 基于 hcaptcha-challenger 的强大 hCaptcha 解决方案，使用本机环境安装，简化部署流程。
 
 ## 特点
 
-✅ **简化安装** - 无需虚拟环境，直接使用本机Python  
-✅ **智能切换** - 支持本机环境和虚拟环境灵活切换  
-✅ **AI驱动** - 基于多模态大语言模型的验证码解决  
-✅ **环境变量配置** - 统一的配置管理
+[OK] **简化安装** - 无需虚拟环境，直接使用本机Python  
+[OK] **智能切换** - 支持本机环境和虚拟环境灵活切换  
+[OK] **AI驱动** - 基于多模态大语言模型的验证码解决  
+[OK] **环境变量配置** - 统一的配置管理
 
 ## 快速开始
 
@@ -140,11 +140,11 @@ Just implement some interfaces to make `AI vs AI` possible.
 
 | Challenge Type                          | Pluggable Resource                                           | Agent Capability |
 | --------------------------------------- | ------------------------------------------------------------ | ---------------- |
-| `image_label_binary`                    | ResNet  ONNX classification [#220401](https://github.com/QIN2DIM/hcaptcha-challenger/issues?q=label%3A%22%F0%9F%94%A5+challenge%22+) | ✅                |
-| `image_label_area_select: point`        | YOLOv8 ONNX detection  [#230826](https://github.com/QIN2DIM/hcaptcha-challenger/issues/588) | ✅                |
+| `image_label_binary`                    | ResNet  ONNX classification [#220401](https://github.com/QIN2DIM/hcaptcha-challenger/issues?q=label%3A%22%F0%9F%94%A5+challenge%22+) | [OK]                |
+| `image_label_area_select: point`        | YOLOv8 ONNX detection  [#230826](https://github.com/QIN2DIM/hcaptcha-challenger/issues/588) | [OK]                |
 | `image_label_area_select: bounding box` | YOLOv8 ONNX segmentation  [#230828](https://github.com/QIN2DIM/hcaptcha-challenger/issues/592) | -                |
 | `image_label_multiple_choice`           | ViT ONNX zero-shot motion [#231109](https://github.com/QIN2DIM/hcaptcha-challenger/issues/917) | -                |
-| `image_drag_drop`                       | Spatial Chain-of-Thought [#250401](https://github.com/QIN2DIM/hcaptcha-challenger/issues/995) | ✅                |
+| `image_drag_drop`                       | Spatial Chain-of-Thought [#250401](https://github.com/QIN2DIM/hcaptcha-challenger/issues/995) | [OK]                |
 
 | Advanced Task               | Pluggable Resource                                           |
 | --------------------------- | ------------------------------------------------------------ |

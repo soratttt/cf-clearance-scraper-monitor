@@ -7,7 +7,7 @@ const { testSingle } = require('./test-recaptcha');
 
 async function testRecaptchaV3Simple() {
     console.log('🔒 reCAPTCHA v3 快速测试');
-    console.log('💡 使用综合测试模块...');
+    console.log('[INFO] 使用综合测试模块...');
     console.log('');
     
     return await testSingle('recaptchav3');
@@ -15,7 +15,7 @@ async function testRecaptchaV3Simple() {
 
 // 运行测试
 if (require.main === module) {
-    console.log('🚀 开始 reCAPTCHA v3 快速测试');
+    console.log('[START] 开始 reCAPTCHA v3 快速测试');
     console.log('📝 提示: 如需完整测试，请使用: node test-recaptcha-comprehensive.js');
     console.log('');
 

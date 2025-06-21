@@ -48,7 +48,7 @@ class RecaptchaV2Solver {
         throw new RecaptchaNotFoundError('No reCAPTCHA found on page');
       }
       
-      console.log('✅ 页面包含 reCAPTCHA');
+      console.log('[OK] 页面包含 reCAPTCHA');
       
       // 2. 多次尝试初始化 reCAPTCHA Box
       recaptchaBox = new RecaptchaBoxV2(page);
@@ -59,13 +59,13 @@ class RecaptchaV2Solver {
       while (initAttempts < maxInitAttempts) {
         try {
           initAttempts++;
-          console.log(`🔄 reCAPTCHA 初始化尝试 ${initAttempts}/${maxInitAttempts}...`);
+          console.log(`[RESTART] reCAPTCHA 初始化尝试 ${initAttempts}/${maxInitAttempts}...`);
           
           await recaptchaBox.initialize();
           break; // 成功初始化，跳出循环
           
         } catch (error) {
-          console.warn(`⚠️  初始化尝试 ${initAttempts} 失败: ${error.message}`);
+          console.warn(`[WARN]  初始化尝试 ${initAttempts} 失败: ${error.message}`);
           
           if (initAttempts >= maxInitAttempts) {
             throw error; // 最后一次尝试也失败了
@@ -85,10 +85,10 @@ class RecaptchaV2Solver {
       if (!hasChallengeAppeared) {
         // 检查是否已经解决
         if (await recaptchaBox.isSolved()) {
-          console.log('✅ reCAPTCHA 自动通过，无需解决挑战');
+          console.log('[OK] reCAPTCHA 自动通过，无需解决挑战');
           const token = await recaptchaBox.getToken();
           if (token) {
-            console.log(`🎯 成功获取 token (长度: ${token.length})`);
+            console.log(`[TARGET] 成功获取 token (长度: ${token.length})`);
             return {
               success: true,
               token: token,
@@ -102,7 +102,7 @@ class RecaptchaV2Solver {
 
       // 4. 检测挑战类型
       const challengeType = await recaptchaBox.getChallengeType();
-      console.log(`🎯 检测到挑战类型: ${challengeType || 'unknown'}`);
+      console.log(`[TARGET] 检测到挑战类型: ${challengeType || 'unknown'}`);
 
       // 5. 解决挑战
       let solved = false;
@@ -115,15 +115,15 @@ class RecaptchaV2Solver {
           solved = await this.audioChallenge.solve(recaptchaBox, language);
           usedChallengeType = 'audio';
         } catch (error) {
-          console.log(`❌ 音频挑战失败: ${error.message}`);
-          console.log('🔄 切换到图像挑战...');
+          console.log(`[FAIL] 音频挑战失败: ${error.message}`);
+          console.log('[RESTART] 切换到图像挑战...');
           
           // 如果音频失败，尝试图像挑战
           try {
             solved = await this.imageChallenge.solve(recaptchaBox);
             usedChallengeType = 'image';
           } catch (imageError) {
-            console.error(`❌ 图像挑战也失败: ${imageError.message}`);
+            console.error(`[FAIL] 图像挑战也失败: ${imageError.message}`);
             throw new RecaptchaSolveError(`Both audio and image challenges failed. Audio: ${error.message}. Image: ${imageError.message}`);
           }
         }
@@ -146,7 +146,7 @@ class RecaptchaV2Solver {
       }
 
       // 6. 获取 token
-      console.log('🎯 获取 reCAPTCHA token...');
+      console.log('[TARGET] 获取 reCAPTCHA token...');
       const token = await recaptchaBox.getToken();
       
       if (!token) {
@@ -154,7 +154,7 @@ class RecaptchaV2Solver {
       }
 
       const solveTime = Date.now() - startTime;
-      console.log(`✅ reCAPTCHA v2 解决成功！`);
+      console.log(`[OK] reCAPTCHA v2 解决成功！`);
       console.log(`   挑战类型: ${usedChallengeType}`);
       console.log(`   总耗时: ${solveTime}ms`);
       console.log(`   Token长度: ${token.length}`);
@@ -168,7 +168,7 @@ class RecaptchaV2Solver {
 
     } catch (error) {
       const solveTime = Date.now() - startTime;
-      console.error(`❌ reCAPTCHA v2 解决失败 (${solveTime}ms):`, error.message);
+      console.error(`[FAIL] reCAPTCHA v2 解决失败 (${solveTime}ms):`, error.message);
       
       throw new RecaptchaSolveError(`reCAPTCHA v2 solving failed after ${solveTime}ms: ${error.message}`);
     }
@@ -231,12 +231,12 @@ class RecaptchaV2Solver {
     }
 
     if (issues.length > 0) {
-      console.warn('⚠️  环境检查发现问题:');
+      console.warn('[WARN]  环境检查发现问题:');
       issues.forEach(issue => console.warn(`   - ${issue}`));
       return { valid: false, issues };
     }
 
-    console.log('✅ 环境检查通过');
+    console.log('[OK] 环境检查通过');
     return { valid: true, issues: [] };
   }
 }

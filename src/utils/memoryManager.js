@@ -48,7 +48,7 @@ class MemoryManager {
 
         // 记录内存使用情况
         if (heapUsagePercent > 0.7) {
-            console.log(`⚠️  High memory usage: ${heapUsedMB}MB/${maxHeapMB}MB (${Math.round(heapUsagePercent * 100)}%)`);
+            console.log(`[WARN] High memory usage: ${heapUsedMB}MB/${maxHeapMB}MB (${Math.round(heapUsagePercent * 100)}%)`);
             console.log(`   RSS: ${rssMB}MB, HeapTotal: ${heapTotalMB}MB`);
             console.log(`   System: ${systemTotalMB - systemFreeMB}MB/${systemTotalMB}MB used`);
         }
@@ -71,16 +71,16 @@ class MemoryManager {
     }
 
     forceGarbageCollection() {
-        console.log('🔄 Forcing garbage collection due to high memory usage');
+        console.log('[GC] Forcing garbage collection due to high memory usage');
         if (global.gc) {
             try {
                 global.gc();
-                console.log('✅ Forced GC completed');
+                console.log('[OK] Forced GC completed');
             } catch (e) {
-                console.error('❌ Failed to force GC:', e.message);
+                console.error('[ERROR] Failed to force GC:', e.message);
             }
         } else {
-            console.warn('⚠️  global.gc() not available. Start with --expose-gc flag');
+            console.warn('[WARN] global.gc() not available. Start with --expose-gc flag');
         }
     }
 
@@ -97,7 +97,7 @@ class MemoryManager {
 
     cleanupBrowserContexts() {
         if (global.browserContexts && global.browserContexts.size > 0) {
-            console.log(`🧹 Cleaning up ${global.browserContexts.size} browser contexts`);
+            console.log(`[CLEANUP] Cleaning up ${global.browserContexts.size} browser contexts`);
             
             const contextsToClean = Array.from(global.browserContexts);
             let cleaned = 0;
@@ -113,13 +113,13 @@ class MemoryManager {
             });
             
             if (cleaned > 0) {
-                console.log(`✅ Cleaned up ${cleaned} browser contexts`);
+                console.log(`[OK] Cleaned up ${cleaned} browser contexts`);
             }
         }
     }
 
     forceCleanup() {
-        console.log('🔧 执行强制内存清理...');
+        console.log('[CLEANUP] 执行强制内存清理...');
         
         // 强制垃圾回收
         this.forceGarbageCollection();
@@ -133,12 +133,12 @@ class MemoryManager {
             setTimeout(() => {
                 try {
                     global.gc();
-                    console.log('✅ 延迟GC完成');
+                    console.log('[OK] 延迟GC完成');
                 } catch (e) {}
             }, 1000);
         }
         
-        console.log('✅ 强制内存清理完成');
+        console.log('[OK] 强制内存清理完成');
     }
 
     getCpuUsage() {

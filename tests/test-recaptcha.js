@@ -38,9 +38,9 @@ const TEST_CONFIGS = {
  * 执行单个 reCAPTCHA 测试
  */
 async function testRecaptcha(config) {
-    console.log(`\n🧪 测试 ${config.name}`);
+    console.log(`\n[TEST] 测试 ${config.name}`);
     console.log('='.repeat(60));
-    console.log(`📋 配置信息:`);
+    console.log(`[LIST] 配置信息:`);
     console.log(`   类型: ${config.type}`);
     console.log(`   网站: ${config.websiteUrl}`);
     console.log(`   SiteKey: ${config.websiteKey}`);
@@ -66,8 +66,8 @@ async function testRecaptcha(config) {
     }
 
     try {
-        console.log('📤 发送解决请求...');
-        console.log(`⏰ 开始时间: ${new Date().toISOString()}`);
+        console.log('[REQUEST] 发送解决请求...');
+        console.log(`[TIME] 开始时间: ${new Date().toISOString()}`);
 
         const response = await axios.post(API_BASE_URL, testData, {
             timeout: config.timeout,
@@ -80,53 +80,53 @@ async function testRecaptcha(config) {
         const totalTime = endTime - startTime;
         const result = response.data;
 
-        console.log(`⏰ 结束时间: ${new Date().toISOString()}`);
+        console.log(`[TIME] 结束时间: ${new Date().toISOString()}`);
         console.log('');
-        console.log('📊 测试结果:');
+        console.log('[STATS] 测试结果:');
         console.log(`   HTTP状态: ${response.status}`);
         console.log(`   响应代码: ${result.code}`);
-        console.log(`   成功状态: ${result.code === 200 ? '✅ 成功' : '❌ 失败'}`);
+        console.log(`   成功状态: ${result.code === 200 ? '[OK] 成功' : '[FAIL] 失败'}`);
         console.log(`   总耗时: ${totalTime}ms (${Math.round(totalTime / 1000)}秒)`);
 
         if (result.token) {
-            console.log('🎯 Token 信息:');
+            console.log('[TARGET] Token 信息:');
             console.log(`   长度: ${result.token.length} 字符`);
             console.log(`   预览: ${result.token.substring(0, 80)}...`);
             
             // 验证 token 长度
             if (result.token.length >= config.expectedTokenLength) {
-                console.log(`   ✅ Token 长度符合预期 (>= ${config.expectedTokenLength})`);
+                console.log(`   [OK] Token 长度符合预期 (>= ${config.expectedTokenLength})`);
             } else {
-                console.log(`   ⚠️  Token 长度偏短 (< ${config.expectedTokenLength})`);
+                console.log(`   [WARN]  Token 长度偏短 (< ${config.expectedTokenLength})`);
             }
         } else {
-            console.log('❌ 未获得 token');
+            console.log('[FAIL] 未获得 token');
         }
 
         if (result.solveTime) {
-            console.log(`⏱️  内部解决时间: ${result.solveTime}ms (${Math.round(result.solveTime / 1000)}秒)`);
+            console.log(`[TIMER]  内部解决时间: ${result.solveTime}ms (${Math.round(result.solveTime / 1000)}秒)`);
         }
 
         if (result.challengeType) {
-            console.log(`🔧 挑战类型: ${result.challengeType}`);
+            console.log(`[CONFIG] 挑战类型: ${result.challengeType}`);
         }
 
         if (config.type === 'recaptchav3' && result.score !== undefined) {
-            console.log(`📊 reCAPTCHA v3 分数: ${result.score}`);
+            console.log(`[STATS] reCAPTCHA v3 分数: ${result.score}`);
         }
 
         // 分析结果
         console.log('');
-        console.log('📈 结果分析:');
+        console.log('[INFO] 结果分析:');
         const success = result.code === 200 && result.token && result.token.length >= config.expectedTokenLength;
         
         if (success) {
-            console.log(`🎉 ${config.name} 测试完全成功！`);
-            console.log('   ✅ 获得有效 token');
-            console.log('   ✅ 解决时间合理');
-            console.log('   ✅ 系统集成正常');
+            console.log(`[SUCCESS] ${config.name} 测试完全成功！`);
+            console.log('   [OK] 获得有效 token');
+            console.log('   [OK] 解决时间合理');
+            console.log('   [OK] 系统集成正常');
         } else {
-            console.log(`❌ ${config.name} 测试失败`);
+            console.log(`[FAIL] ${config.name} 测试失败`);
             if (result.message) {
                 console.log(`   错误: ${result.message}`);
             }
@@ -144,20 +144,20 @@ async function testRecaptcha(config) {
         const endTime = Date.now();
         const totalTime = endTime - startTime;
         
-        console.log(`⏰ 失败时间: ${new Date().toISOString()}`);
-        console.log(`⏱️  总耗时: ${totalTime}ms`);
+        console.log(`[TIME] 失败时间: ${new Date().toISOString()}`);
+        console.log(`[TIMER]  总耗时: ${totalTime}ms`);
         console.log('');
-        console.error(`❌ ${config.name} 测试异常:`);
+        console.error(`[FAIL] ${config.name} 测试异常:`);
         
         if (error.response) {
             console.error(`   HTTP状态: ${error.response.status}`);
             console.error(`   错误响应:`, error.response.data);
         } else if (error.code === 'ECONNABORTED') {
-            console.error('   ⏰ 请求超时');
+            console.error('   [TIME] 请求超时');
         } else if (error.code === 'ECONNREFUSED') {
-            console.error('   🔌 连接被拒绝 - 请确保服务器正在运行');
+            console.error('   [CONNECT] 连接被拒绝 - 请确保服务器正在运行');
         } else {
-            console.error(`   🔍 错误: ${error.message}`);
+            console.error(`   [DEBUG] 错误: ${error.message}`);
         }
 
         return {
@@ -174,9 +174,9 @@ async function testRecaptcha(config) {
  * 执行所有测试
  */
 async function runAllTests() {
-    console.log('🚀 reCAPTCHA 综合测试开始');
-    console.log('🎯 目标: 验证 reCAPTCHA v2 (Python) 和 v3 解决方案');
-    console.log('💡 注意: 测试可能需要几分钟时间，请耐心等待');
+    console.log('[START] reCAPTCHA 综合测试开始');
+    console.log('[TARGET] 目标: 验证 reCAPTCHA v2 (Python) 和 v3 解决方案');
+    console.log('[INFO] 注意: 测试可能需要几分钟时间，请耐心等待');
     console.log('');
 
     const results = [];
@@ -184,7 +184,7 @@ async function runAllTests() {
 
     for (let i = 0; i < configs.length; i++) {
         const config = configs[i];
-        console.log(`\n📋 进度: ${i + 1}/${configs.length}`);
+        console.log(`\n[LIST] 进度: ${i + 1}/${configs.length}`);
         
         const result = await testRecaptcha(config);
         results.push(result);
@@ -204,7 +204,7 @@ async function runAllTests() {
     let totalTime = 0;
 
     results.forEach((result, index) => {
-        const status = result.success ? '✅ 成功' : '❌ 失败';
+        const status = result.success ? '[OK] 成功' : '[FAIL] 失败';
         console.log(`${index + 1}. ${result.config}: ${status} (${Math.round(result.totalTime / 1000)}秒)`);
         
         if (result.success) {
@@ -214,7 +214,7 @@ async function runAllTests() {
     });
 
     console.log('');
-    console.log('📊 统计信息:');
+    console.log('[STATS] 统计信息:');
     console.log(`   总测试数: ${results.length}`);
     console.log(`   成功数: ${successCount}`);
     console.log(`   失败数: ${results.length - successCount}`);
@@ -223,15 +223,15 @@ async function runAllTests() {
 
     console.log('');
     if (successCount === results.length) {
-        console.log('🎉 所有测试通过！reCAPTCHA 解决方案工作正常');
+        console.log('[SUCCESS] 所有测试通过！reCAPTCHA 解决方案工作正常');
         process.exit(0);
     } else {
-        console.log('⚠️  部分测试失败，请检查失败的测试项');
+        console.log('[WARN]  部分测试失败，请检查失败的测试项');
         
         // 显示失败的测试详情
         const failedTests = results.filter(r => !r.success);
         if (failedTests.length > 0) {
-            console.log('\n❌ 失败的测试:');
+            console.log('\n[FAIL] 失败的测试:');
             failedTests.forEach(test => {
                 console.log(`   - ${test.config}: ${test.error || 'Unknown error'}`);
             });
@@ -246,19 +246,19 @@ async function runAllTests() {
  */
 async function testSingle(type) {
     if (!TEST_CONFIGS[type]) {
-        console.error(`❌ 未知的测试类型: ${type}`);
+        console.error(`[FAIL] 未知的测试类型: ${type}`);
         console.log('可用类型:', Object.keys(TEST_CONFIGS).join(', '));
         process.exit(1);
     }
 
-    console.log(`🧪 单独测试: ${TEST_CONFIGS[type].name}`);
+    console.log(`[TEST] 单独测试: ${TEST_CONFIGS[type].name}`);
     const result = await testRecaptcha(TEST_CONFIGS[type]);
     
     if (result.success) {
-        console.log('\n✅ 单项测试成功');
+        console.log('\n[OK] 单项测试成功');
         process.exit(0);
     } else {
-        console.log('\n❌ 单项测试失败');
+        console.log('\n[FAIL] 单项测试失败');
         process.exit(1);
     }
 }

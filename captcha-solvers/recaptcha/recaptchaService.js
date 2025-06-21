@@ -108,7 +108,7 @@ class RecaptchaService {
         if (await recaptchaBox.isCheckboxChecked()) {
           const token = await recaptchaBox.getToken();
           if (token) {
-            console.log('✅ reCAPTCHA 自动通过验证');
+            console.log('[OK] reCAPTCHA 自动通过验证');
             isResolved = true;
             clearTimeout(timeoutHandler);
             await cleanup();
@@ -123,7 +123,7 @@ class RecaptchaService {
           // 没有挑战，尝试获取token
           const token = await recaptchaBox.getToken();
           if (token) {
-            console.log('✅ reCAPTCHA 无挑战直接通过');
+            console.log('[OK] reCAPTCHA 无挑战直接通过');
             isResolved = true;
             clearTimeout(timeoutHandler);
             await cleanup();
@@ -140,7 +140,7 @@ class RecaptchaService {
 
         while (attempts < this.maxAttempts && !solved && !isResolved) {
           attempts++;
-          console.log(`🎯 挑战解决尝试 ${attempts}/${this.maxAttempts}`);
+          console.log(`[TARGET] 挑战解决尝试 ${attempts}/${this.maxAttempts}`);
 
           try {
             if (method === 'audio') {
@@ -152,7 +152,7 @@ class RecaptchaService {
             if (solved) {
               const token = await recaptchaBox.getToken();
               if (token) {
-                console.log('✅ reCAPTCHA v2 挑战解决成功');
+                console.log('[OK] reCAPTCHA v2 挑战解决成功');
                 isResolved = true;
                 clearTimeout(timeoutHandler);
                 await cleanup();
@@ -167,7 +167,7 @@ class RecaptchaService {
             }
 
           } catch (error) {
-            console.log(`❌ 尝试 ${attempts} 失败: ${error.message}`);
+            console.log(`[FAIL] 尝试 ${attempts} 失败: ${error.message}`);
             if (attempts >= this.maxAttempts) {
               throw error;
             }
@@ -269,7 +269,7 @@ class RecaptchaService {
               const tokenMatch = responseText.match(/"([A-Za-z0-9_-]{100,})"/);
               if (tokenMatch && tokenMatch[1]) {
                 capturedToken = tokenMatch[1];
-                console.log('✅ 捕获到 reCAPTCHA v3 token');
+                console.log('[OK] 捕获到 reCAPTCHA v3 token');
               }
             } catch (e) {
               // 忽略解析错误
@@ -300,7 +300,7 @@ class RecaptchaService {
 
         if (token || capturedToken) {
           const finalToken = token || capturedToken;
-          console.log('✅ reCAPTCHA v3 解决成功');
+          console.log('[OK] reCAPTCHA v3 解决成功');
           isResolved = true;
           clearTimeout(timeoutHandler);
           await cleanup();

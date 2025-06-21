@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 hCaptcha 解决器 - 使用原始 hcaptcha-challenger 库
 只作为中间件，不修改原始代码
@@ -46,13 +47,13 @@ def get_random_gemini_api_key():
         api_keys = [key.strip() for key in api_keys_str.split(',') if key.strip()]
         if api_keys:
             selected_key = random.choice(api_keys)
-            print(f"🔑 从{len(api_keys)}个API密钥中随机选择了一个密钥 (末尾: ...{selected_key[-8:]})")
+            print(f"[KEY] 从{len(api_keys)}个API密钥中随机选择了一个密钥 (末尾: ...{selected_key[-8:]})")
             return selected_key
     
     # 如果没有配置多个密钥，使用单个密钥
     single_key = os.getenv('GEMINI_API_KEY')
     if single_key:
-        print(f"🔑 使用单个API密钥 (末尾: ...{single_key[-8:]})")
+        print(f"[KEY] 使用单个API密钥 (末尾: ...{single_key[-8:]})")
         return single_key
     
     # 没有配置任何密钥

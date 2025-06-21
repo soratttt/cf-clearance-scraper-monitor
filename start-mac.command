@@ -6,12 +6,12 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 cd "$SCRIPT_DIR"
 
-echo "🚀 启动 CF Clearance Scraper..."
+echo "[START] 启动 CF Clearance Scraper..."
 echo
 
 # 检查 Node.js
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js 未安装，请先运行 一键部署-MAC.command"
+    echo "[FAIL] Node.js 未安装，请先运行 一键部署-MAC.command"
     echo "按任意键关闭..."
     read -n 1 -s
     exit 1
@@ -19,7 +19,7 @@ fi
 
 # 检查依赖
 if [ ! -d "node_modules" ]; then
-    echo "❌ 依赖未安装，请先运行 一键部署-MAC.command"
+    echo "[FAIL] 依赖未安装，请先运行 一键部署-MAC.command"
     echo "按任意键关闭..."
     read -n 1 -s
     exit 1
@@ -56,7 +56,7 @@ if [ -f "start.js" ]; then
 elif [ -f "src/index.js" ]; then
     node src/index.js
 else
-    echo "❌ 找不到启动文件"
+    echo "[FAIL] 找不到启动文件"
     echo "按任意键关闭..."
     read -n 1 -s
     exit 1

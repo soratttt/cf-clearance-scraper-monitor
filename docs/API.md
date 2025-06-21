@@ -248,11 +248,11 @@ def solve_hcaptcha(website_url, website_key):
     result = response.json()
     
     if result.get("code") == 200:
-        print(f"✅ hCaptcha solved successfully!")
+        print(f"[OK] hCaptcha solved successfully!")
         print(f"Token: {result['token'][:50]}...")
         return result["token"]
     else:
-        print(f"❌ Failed: {result.get('message')}")
+        print(f"[FAIL] Failed: {result.get('message')}")
         return None
 
 # 使用示例

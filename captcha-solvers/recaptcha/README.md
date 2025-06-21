@@ -2,9 +2,9 @@
 
 基于 [Playwright-reCAPTCHA](https://github.com/0xsongsu/Playwright-reCAPTCHA) 项目改编的 Puppeteer 版本，支持 reCAPTCHA v2 和 v3 自动解决。
 
-## 📋 功能特性
+## [LIST] 功能特性
 
-### ✅ 已实现
+### [OK] 已实现
 - **reCAPTCHA v2 框架**: 完整的挑战检测和处理流程
 - **reCAPTCHA v3 支持**: 自动token获取
 - **多语言支持**: 9种语言 (en, es, fr, de, pt, ru, it, nl, pl)
@@ -38,7 +38,7 @@ captcha-solvers/recaptcha/
 | `errors.py` | `errors.js` | 异常定义 |
 | `translations.py` | `translations.js` | 多语言和常量 |
 
-## 🔌 API 接口
+## [CONNECT] API 接口
 
 ### reCAPTCHA v2
 ```javascript
@@ -65,7 +65,7 @@ captcha-solvers/recaptcha/
 }
 ```
 
-## 🔧 集成方案
+## [CONFIG] 集成方案
 
 ### 1. 音频挑战集成 (Google Speech API)
 
@@ -153,7 +153,7 @@ RECAPTCHA_MAX_ATTEMPTS=3
 RECAPTCHA_TIMEOUT=180000
 ```
 
-## 📊 核心流程
+## [STATS] 核心流程
 
 ### reCAPTCHA v2 解决流程
 
@@ -179,7 +179,7 @@ RECAPTCHA_TIMEOUT=180000
 4. 监听网络响应 → 5. 提取token → 6. 返回结果
 ```
 
-## 🧪 测试
+## [TEST] 测试
 
 ```bash
 # 运行 reCAPTCHA 测试
@@ -243,7 +243,7 @@ switch (provider) {
 }
 ```
 
-## 🚀 部署建议
+## [START] 部署建议
 
 1. **资源配置**: 建议至少2GB RAM，支持音频/图像处理
 2. **依赖安装**: 确保安装了所需的语音/图像处理库

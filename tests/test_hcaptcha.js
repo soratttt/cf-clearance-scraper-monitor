@@ -10,7 +10,7 @@ const readline = require('readline');
 // 测试配置
 const TEST_CONFIG = {
     server: {
-        host: 'localhost',
+        host: '129.226.188.252',
         port: 3000,
         timeout: 360000 // 6分钟超时，给Python更多时间
     },
@@ -45,8 +45,8 @@ function solveHcaptcha(testData = {}) {
             }
         };
 
-        console.log(`📤 发送请求到: http://${options.hostname}:${options.port}${options.path}`);
-        console.log(`📤 请求数据:`, JSON.stringify(requestData, null, 2));
+        console.log(`[REQUEST] 发送请求到: http://${options.hostname}:${options.port}${options.path}`);
+        console.log(`[REQUEST] 请求数据:`, JSON.stringify(requestData, null, 2));
 
         const req = http.request(options, (res) => {
             let responseData = '';
@@ -133,22 +133,22 @@ function validateResponse(response) {
     
     // 检查状态码
     if (response.statusCode === 200) {
-        validations.push({ check: 'HTTP Status', result: '✅ PASS', detail: `200 OK` });
+        validations.push({ check: 'HTTP Status', result: '[OK] PASS', detail: `200 OK` });
     } else {
-        validations.push({ check: 'HTTP Status', result: '❌ FAIL', detail: `${response.statusCode}` });
+        validations.push({ check: 'HTTP Status', result: '[FAIL] FAIL', detail: `${response.statusCode}` });
     }
     
     // 检查响应体
     if (response.body && typeof response.body === 'object') {
-        validations.push({ check: 'Response Format', result: '✅ PASS', detail: 'Valid JSON' });
+        validations.push({ check: 'Response Format', result: '[OK] PASS', detail: 'Valid JSON' });
         
         // 检查必需字段
         const requiredFields = ['code', 'message'];
         requiredFields.forEach(field => {
             if (response.body.hasOwnProperty(field)) {
-                validations.push({ check: `Field: ${field}`, result: '✅ PASS', detail: `Present` });
+                validations.push({ check: `Field: ${field}`, result: '[OK] PASS', detail: `Present` });
             } else {
-                validations.push({ check: `Field: ${field}`, result: '❌ FAIL', detail: `Missing` });
+                validations.push({ check: `Field: ${field}`, result: '[FAIL] FAIL', detail: `Missing` });
             }
         });
         
@@ -157,19 +157,19 @@ function validateResponse(response) {
             if (response.body.token) {
                 validations.push({ 
                     check: 'Token Field', 
-                    result: '✅ PASS', 
+                    result: '[OK] PASS', 
                     detail: `Length: ${response.body.token.length}` 
                 });
             } else {
                 validations.push({ 
                     check: 'Token Field', 
-                    result: '❌ FAIL', 
+                    result: '[FAIL] FAIL', 
                     detail: 'Missing token in success response' 
                 });
             }
         }
     } else {
-        validations.push({ check: 'Response Format', result: '❌ FAIL', detail: 'Invalid JSON' });
+        validations.push({ check: 'Response Format', result: '[FAIL] FAIL', detail: 'Invalid JSON' });
     }
     
     return validations;
@@ -192,31 +192,31 @@ function formatDuration(ms) {
  * 运行测试套件
  */
 async function runTests() {
-    console.log('🧪 hCaptcha 功能测试');
+    console.log('[TEST] hCaptcha 功能测试');
     console.log('='.repeat(60));
-    console.log(`🌐 测试网站: ${TEST_CONFIG.hcaptcha.websiteUrl}`);
-    console.log(`🔑 Site Key: ${TEST_CONFIG.hcaptcha.websiteKey}`);
-    console.log(`🖥️  服务地址: http://${TEST_CONFIG.server.host}:${TEST_CONFIG.server.port}`);
+    console.log(`[NETWORK] 测试网站: ${TEST_CONFIG.hcaptcha.websiteUrl}`);
+    console.log(`[KEY] Site Key: ${TEST_CONFIG.hcaptcha.websiteKey}`);
+    console.log(`[SERVER]  服务地址: http://${TEST_CONFIG.server.host}:${TEST_CONFIG.server.port}`);
     console.log('='.repeat(60));
     console.log();
 
     // 1. 检查服务状态
-    console.log('📡 检查服务状态...');
+    console.log('[STATUS] 检查服务状态...');
     const serverStatus = await checkServerStatus();
     
     if (!serverStatus.status) {
-        console.log('❌ 服务未运行或无法连接');
+        console.log('[FAIL] 服务未运行或无法连接');
         console.log(`   错误: ${serverStatus.error || 'Unknown'}`);
         console.log('   请确保服务已启动: npm start');
         process.exit(1);
     }
     
-    console.log('✅ 服务运行正常');
+    console.log('[OK] 服务运行正常');
     console.log();
 
     // 2. 基本功能测试
-    console.log('🎯 开始 hCaptcha 解决测试...');
-    console.log('⏱️  预计耗时: 30-120 秒');
+    console.log('[TARGET] 开始 hCaptcha 解决测试...');
+    console.log('[TIMER]  预计耗时: 30-120 秒');
     console.log();
     
     const startTime = Date.now();
@@ -226,15 +226,15 @@ async function runTests() {
         const endTime = Date.now();
         const duration = endTime - startTime;
         
-        console.log('📥 收到响应:');
+        console.log('[RESPONSE] 收到响应:');
         console.log('─'.repeat(40));
-        console.log(`⏱️  耗时: ${formatDuration(duration)}`);
-        console.log(`📊 状态码: ${response.statusCode}`);
-        console.log(`📋 响应体:`, JSON.stringify(response.body, null, 2));
+        console.log(`[TIMER]  耗时: ${formatDuration(duration)}`);
+        console.log(`[STATS] 状态码: ${response.statusCode}`);
+        console.log(`[LIST] 响应体:`, JSON.stringify(response.body, null, 2));
         console.log();
         
         // 3. 验证响应
-        console.log('🔍 响应验证:');
+        console.log('[DEBUG] 响应验证:');
         console.log('─'.repeat(40));
         const validations = validateResponse(response);
         
@@ -244,40 +244,40 @@ async function runTests() {
         console.log();
         
         // 4. 结果总结
-        const passedValidations = validations.filter(v => v.result.includes('✅')).length;
+        const passedValidations = validations.filter(v => v.result.includes('[OK]')).length;
         const totalValidations = validations.length;
         
-        console.log('📈 测试总结:');
+        console.log('[INFO] 测试总结:');
         console.log('─'.repeat(40));
-        console.log(`✅ 通过验证: ${passedValidations}/${totalValidations}`);
-        console.log(`⏱️  总耗时: ${formatDuration(duration)}`);
+        console.log(`[OK] 通过验证: ${passedValidations}/${totalValidations}`);
+        console.log(`[TIMER]  总耗时: ${formatDuration(duration)}`);
         
         if (response.body && response.body.code === 200 && response.body.token) {
-            console.log('🎉 hCaptcha 解决成功!');
-            console.log(`🎫 Token: ${response.body.token.substring(0, 50)}...`);
+            console.log('[SUCCESS] hCaptcha 解决成功!');
+            console.log(`[TOKEN] Token: ${response.body.token.substring(0, 50)}...`);
         } else if (response.body && response.body.code !== 200) {
-            console.log('⚠️  hCaptcha 解决失败');
-            console.log(`❌ 错误: ${response.body.message || 'Unknown error'}`);
+            console.log('[WARN]  hCaptcha 解决失败');
+            console.log(`[FAIL] 错误: ${response.body.message || 'Unknown error'}`);
         } else {
-            console.log('❓ 响应格式异常');
+            console.log('[UNKNOWN] 响应格式异常');
         }
         
     } catch (error) {
         const endTime = Date.now();
         const duration = endTime - startTime;
         
-        console.log('💥 测试失败:');
+        console.log('[ERROR] 测试失败:');
         console.log('─'.repeat(40));
-        console.log(`⏱️  耗时: ${formatDuration(duration)}`);
-        console.log(`❌ 错误: ${error.message}`);
+        console.log(`[TIMER]  耗时: ${formatDuration(duration)}`);
+        console.log(`[FAIL] 错误: ${error.message}`);
         
         if (error.message.includes('timeout')) {
-            console.log('⏰ 可能原因:');
+            console.log('[TIME] 可能原因:');
             console.log('   - hCaptcha 挑战过于复杂');
             console.log('   - 网络连接不稳定');
             console.log('   - Gemini API 响应缓慢');
         } else if (error.message.includes('ECONNREFUSED')) {
-            console.log('🔌 可能原因:');
+            console.log('[CONNECT] 可能原因:');
             console.log('   - 服务未启动');
             console.log('   - 端口号错误');
         }
@@ -291,12 +291,12 @@ async function runTests() {
  * 运行压力测试
  */
 async function runStressTest(concurrency, totalRequests) {
-    console.log('🧪 开始压力测试');
+    console.log('[TEST] 开始压力测试');
     console.log('='.repeat(60));
-    console.log(`📊 并发数: ${concurrency}`);
-    console.log(`🎯 总请求数: ${totalRequests}`);
-    console.log(`🌐 测试网站: ${TEST_CONFIG.hcaptcha.websiteUrl}`);
-    console.log(`🔑 Site Key: ${TEST_CONFIG.hcaptcha.websiteKey}`);
+    console.log(`[STATS] 并发数: ${concurrency}`);
+    console.log(`[TARGET] 总请求数: ${totalRequests}`);
+    console.log(`[NETWORK] 测试网站: ${TEST_CONFIG.hcaptcha.websiteUrl}`);
+    console.log(`[KEY] Site Key: ${TEST_CONFIG.hcaptcha.websiteKey}`);
     console.log('='.repeat(60));
     console.log();
 
@@ -370,17 +370,17 @@ async function runStressTest(concurrency, totalRequests) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    console.log('\n\n📊 压力测试结果:');
+    console.log('\n\n[STATS] 压力测试结果:');
     console.log('='.repeat(60));
-    console.log(`✅ 成功请求: ${results.success}`);
-    console.log(`❌ 失败请求: ${results.failed}`);
-    console.log(`⏱️  总耗时: ${formatDuration(Date.now() - startTime)}`);
-    console.log(`📈 平均响应时间: ${formatDuration(results.totalTime / totalRequests)}`);
+    console.log(`[OK] 成功请求: ${results.success}`);
+    console.log(`[FAIL] 失败请求: ${results.failed}`);
+    console.log(`[TIMER]  总耗时: ${formatDuration(Date.now() - startTime)}`);
+    console.log(`[INFO] 平均响应时间: ${formatDuration(results.totalTime / totalRequests)}`);
     console.log(`⚡ 最快响应: ${formatDuration(results.minTime)}`);
     console.log(`🐢 最慢响应: ${formatDuration(results.maxTime)}`);
     
     if (results.errors.length > 0) {
-        console.log('\n❌ 错误详情:');
+        console.log('\n[FAIL] 错误详情:');
         results.errors.slice(0, 5).forEach((error, index) => {
             console.log(`${index + 1}. ${error.error || error.message} (${formatDuration(error.time)})`);
         });
@@ -399,7 +399,7 @@ async function interactiveMode() {
         output: process.stdout
     });
 
-    console.log('🎮 hCaptcha 测试工具');
+    console.log('[GAME] hCaptcha 测试工具');
     console.log('='.repeat(60));
     console.log('1. 单次测试 - 测试服务是否正常运行');
     console.log('2. 压力测试 - 测试服务在高负载下的表现');
@@ -411,17 +411,17 @@ async function interactiveMode() {
     });
 
     if (answer === '1') {
-        console.log('\n🧪 开始单次测试...\n');
+        console.log('\n[TEST] 开始单次测试...\n');
         await runTests();
     } else if (answer === '2') {
-        console.log('\n🧪 开始压力测试配置...\n');
+        console.log('\n[TEST] 开始压力测试配置...\n');
         
         // 获取并发数
         const concurrency = await new Promise(resolve => {
             rl.question('请输入并发数 (1-50): ', answer => {
                 const num = parseInt(answer);
                 if (isNaN(num) || num < 1 || num > 50) {
-                    console.log('⚠️  无效的并发数，使用默认值 1');
+                    console.log('[WARN]  无效的并发数，使用默认值 1');
                     resolve(1);
                 } else {
                     resolve(num);
@@ -434,7 +434,7 @@ async function interactiveMode() {
             rl.question('请输入总请求数 (1-1000): ', answer => {
                 const num = parseInt(answer);
                 if (isNaN(num) || num < 1 || num > 1000) {
-                    console.log('⚠️  无效的请求数，使用默认值 1');
+                    console.log('[WARN]  无效的请求数，使用默认值 1');
                     resolve(1);
                 } else {
                     resolve(num);
@@ -442,7 +442,7 @@ async function interactiveMode() {
             });
         });
 
-        console.log('\n📊 测试配置:');
+        console.log('\n[STATS] 测试配置:');
         console.log(`- 并发数: ${concurrency}`);
         console.log(`- 总请求数: ${totalRequests}`);
         console.log();
@@ -456,10 +456,10 @@ async function interactiveMode() {
         if (confirm) {
             await runStressTest(concurrency, totalRequests);
         } else {
-            console.log('❌ 测试已取消');
+            console.log('[FAIL] 测试已取消');
         }
     } else {
-        console.log('❌ 无效的选择');
+        console.log('[FAIL] 无效的选择');
     }
 
     rl.close();
@@ -470,19 +470,19 @@ async function main() {
     try {
         await interactiveMode();
     } catch (error) {
-        console.error('💥 发生错误:', error.message);
+        console.error('[ERROR] 发生错误:', error.message);
         process.exit(1);
     }
 }
 
 // 错误处理
 process.on('uncaughtException', (error) => {
-    console.error('💥 未捕获的异常:', error.message);
+    console.error('[ERROR] 未捕获的异常:', error.message);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 未处理的 Promise 拒绝:', reason);
+    console.error('[ERROR] 未处理的 Promise 拒绝:', reason);
     process.exit(1);
 });
 

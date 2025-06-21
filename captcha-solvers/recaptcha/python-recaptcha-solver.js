@@ -79,7 +79,7 @@ except ImportError as e:
      * 安装 Python 依赖
      */
     async installDependencies() {
-        console.log('🔧 Installing Python dependencies...');
+        console.log('[CONFIG] Installing Python dependencies...');
         
         return new Promise((resolve, reject) => {
             const requirementsPath = path.join(__dirname, 'python-solver', 'requirements.txt');
@@ -100,10 +100,10 @@ except ImportError as e:
 
             pip.on('close', (code) => {
                 if (code === 0) {
-                    console.log('✅ Python dependencies installed successfully');
+                    console.log('[OK] Python dependencies installed successfully');
                     resolve(true);
                 } else {
-                    console.error('❌ Failed to install Python dependencies');
+                    console.error('[FAIL] Failed to install Python dependencies');
                     reject(new Error(`pip install failed with code ${code}: ${error}`));
                 }
             });
@@ -123,27 +123,27 @@ except ImportError as e:
             maxRetries = 2
         } = options;
 
-        console.log(`🐍 Python 独立解决 reCAPTCHA v2: ${url}`);
+        console.log(`[PYTHON] Python 独立解决 reCAPTCHA v2: ${url}`);
 
         // 检查依赖
         const depCheck = await this.checkDependencies();
         if (!depCheck.available) {
-            console.warn('⚠️ Python dependencies not available:', depCheck.error);
+            console.warn('[WARN] Python dependencies not available:', depCheck.error);
             throw new Error('Python dependencies not installed: ' + depCheck.error);
         }
 
         // 实现重试逻辑
         for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
             try {
-                console.log(`🎯 Python solver attempt ${attempt}/${maxRetries + 1}`);
+                console.log(`[TARGET] Python solver attempt ${attempt}/${maxRetries + 1}`);
                 const result = await this._solveSingle(url, { language, proxy, headless, timeout });
-                console.log(`✅ Python solver succeeded on attempt ${attempt}`);
+                console.log(`[OK] Python solver succeeded on attempt ${attempt}`);
                 return result;
             } catch (error) {
-                console.error(`❌ Python solver attempt ${attempt} failed:`, error.message);
+                console.error(`[FAIL] Python solver attempt ${attempt} failed:`, error.message);
                 
                 if (attempt <= maxRetries) {
-                    console.log(`🔄 Retrying in 3 seconds... (${maxRetries + 1 - attempt} attempts remaining)`);
+                    console.log(`[RESTART] Retrying in 3 seconds... (${maxRetries + 1 - attempt} attempts remaining)`);
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 } else {
                     throw error;
@@ -165,12 +165,12 @@ except ImportError as e:
             maxRetries = 2
         } = options;
 
-        console.log('🐍 Using Python reCAPTCHA solver...');
+        console.log('[PYTHON] Using Python reCAPTCHA solver...');
 
         // 检查依赖
         const depCheck = await this.checkDependencies();
         if (!depCheck.available) {
-            console.warn('⚠️ Python dependencies not available:', depCheck.error);
+            console.warn('[WARN] Python dependencies not available:', depCheck.error);
             throw new Error('Python dependencies not installed: ' + depCheck.error);
         }
 
@@ -181,15 +181,15 @@ except ImportError as e:
         // 实现重试逻辑
         for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
             try {
-                console.log(`🎯 Python solver attempt ${attempt}/${maxRetries + 1}`);
+                console.log(`[TARGET] Python solver attempt ${attempt}/${maxRetries + 1}`);
                 const result = await this._solveSingle(url, { language, proxy, headless, timeout });
-                console.log(`✅ Python solver succeeded on attempt ${attempt}`);
+                console.log(`[OK] Python solver succeeded on attempt ${attempt}`);
                 return result;
             } catch (error) {
-                console.error(`❌ Python solver attempt ${attempt} failed:`, error.message);
+                console.error(`[FAIL] Python solver attempt ${attempt} failed:`, error.message);
                 
                 if (attempt <= maxRetries) {
-                    console.log(`🔄 Retrying in 3 seconds... (${maxRetries + 1 - attempt} attempts remaining)`);
+                    console.log(`[RESTART] Retrying in 3 seconds... (${maxRetries + 1 - attempt} attempts remaining)`);
                     await new Promise(resolve => setTimeout(resolve, 3000));
                 } else {
                     throw error;
@@ -224,13 +224,13 @@ except ImportError as e:
                     // 字符串格式直接使用
                     proxyString = proxy;
                 } else {
-                    console.warn('⚠️  Invalid proxy format, skipping proxy');
+                    console.warn('[WARN]  Invalid proxy format, skipping proxy');
                     proxyString = null;
                 }
                 
                 if (proxyString) {
                     args.push('--proxy', proxyString);
-                    console.log(`🌐 Using proxy: ${proxyString.replace(/:[^:@]*@/, ':***@')}`); // 隐藏密码
+                    console.log(`[NETWORK] Using proxy: ${proxyString.replace(/:[^:@]*@/, ':***@')}`); // 隐藏密码
                 }
             }
 
@@ -238,8 +238,8 @@ except ImportError as e:
                 args.push('--headless');
             }
 
-            console.log(`🚀 启动独立 Python 浏览器进程: ${this.pythonPath} ${args.join(' ')}`);
-            console.log('💡 注意: Python 脚本将启动自己的浏览器实例，这是正常的');
+            console.log(`[START] 启动独立 Python 浏览器进程: ${this.pythonPath} ${args.join(' ')}`);
+            console.log('[INFO] 注意: Python 脚本将启动自己的浏览器实例，这是正常的');
 
             const python = spawn(this.pythonPath, args, {
                 cwd: path.dirname(this.solverScript),
@@ -273,7 +273,7 @@ except ImportError as e:
                         const result = JSON.parse(stdout.trim());
                         
                         if (result.success && result.token) {
-                            console.log(`✅ Python solver succeeded in ${result.solve_time}ms`);
+                            console.log(`[OK] Python solver succeeded in ${result.solve_time}ms`);
                             resolve({
                                 success: true,
                                 token: result.token,
@@ -281,23 +281,23 @@ except ImportError as e:
                                 solveTime: result.solve_time
                             });
                         } else {
-                            console.error('❌ Python solver failed:', result.error);
+                            console.error('[FAIL] Python solver failed:', result.error);
                             reject(new Error(result.error || 'Unknown Python solver error'));
                         }
                     } else {
-                        console.error('❌ Python process failed with code:', code);
+                        console.error('[FAIL] Python process failed with code:', code);
                         console.error('Stderr:', stderr);
                         reject(new Error(`Python process failed with code ${code}: ${stderr}`));
                     }
                 } catch (parseError) {
-                    console.error('❌ Failed to parse Python output:', stdout);
+                    console.error('[FAIL] Failed to parse Python output:', stdout);
                     reject(new Error(`Failed to parse Python output: ${parseError.message}`));
                 }
             });
 
             python.on('error', (error) => {
                 clearTimeout(timeoutId);
-                console.error('❌ Python process error:', error);
+                console.error('[FAIL] Python process error:', error);
                 reject(new Error(`Python process error: ${error.message}`));
             });
         });

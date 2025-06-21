@@ -28,7 +28,7 @@ class ImageChallenge {
 
     while (attempts < this.maxAttempts && !solved) {
       attempts++;
-      console.log(`🎯 图像挑战尝试 ${attempts}/${this.maxAttempts}`);
+      console.log(`[TARGET] 图像挑战尝试 ${attempts}/${this.maxAttempts}`);
 
       try {
         // 1. 获取图像挑战信息
@@ -46,7 +46,7 @@ class ImageChallenge {
           throw new RecaptchaSolveError(`Could not parse target object from: "${challengeInfo.title}"`);
         }
 
-        console.log(`🎯 识别目标: ${targetObject}`);
+        console.log(`[TARGET] 识别目标: ${targetObject}`);
 
         // 3. 使用 Gemini 识别图像
         const selectedIndices = await this._recognizeImagesWithGemini(
@@ -56,12 +56,12 @@ class ImageChallenge {
         );
 
         if (selectedIndices.length === 0) {
-          console.log('⚠️  Gemini 未识别到任何匹配的图像');
+          console.log('[WARN]  Gemini 未识别到任何匹配的图像');
           // 随机选择一些图像作为后备方案
           selectedIndices.push(Math.floor(Math.random() * challengeInfo.images.length));
         }
 
-        console.log(`🎯 选择的图像索引: ${selectedIndices.join(', ')}`);
+        console.log(`[TARGET] 选择的图像索引: ${selectedIndices.join(', ')}`);
 
         // 4. 点击选中的图像
         await recaptchaBox.clickImageTiles(selectedIndices);
@@ -74,22 +74,22 @@ class ImageChallenge {
 
         // 7. 检查是否解决
         if (await recaptchaBox.isSolved()) {
-          console.log('✅ 图像挑战解决成功！');
+          console.log('[OK] 图像挑战解决成功！');
           solved = true;
         } else if (await recaptchaBox.hasError()) {
-          console.log(`❌ 尝试 ${attempts} 失败，检测到错误`);
+          console.log(`[FAIL] 尝试 ${attempts} 失败，检测到错误`);
           if (attempts < this.maxAttempts) {
             await this._prepareRetry(recaptchaBox);
           }
         } else {
-          console.log(`❌ 尝试 ${attempts} 失败，验证未通过`);
+          console.log(`[FAIL] 尝试 ${attempts} 失败，验证未通过`);
           if (attempts < this.maxAttempts) {
             await this._prepareRetry(recaptchaBox);
           }
         }
 
       } catch (error) {
-        console.error(`❌ 图像挑战尝试 ${attempts} 失败:`, error.message);
+        console.error(`[FAIL] 图像挑战尝试 ${attempts} 失败:`, error.message);
         
         if (attempts >= this.maxAttempts) {
           throw error;
@@ -139,9 +139,9 @@ class ImageChallenge {
           
           if (containsTarget) {
             selectedIndices.push(i);
-            console.log(`✅ 图像 ${i} 包含目标对象: ${targetObject}`);
+            console.log(`[OK] 图像 ${i} 包含目标对象: ${targetObject}`);
           } else {
-            console.log(`❌ 图像 ${i} 不包含目标对象`);
+            console.log(`[FAIL] 图像 ${i} 不包含目标对象`);
           }
 
           // 避免请求过快
@@ -153,7 +153,7 @@ class ImageChallenge {
         }
       }
 
-      console.log(`🎯 Gemini 识别完成，选中 ${selectedIndices.length} 张图像`);
+      console.log(`[TARGET] Gemini 识别完成，选中 ${selectedIndices.length} 张图像`);
       return selectedIndices;
 
     } catch (error) {
@@ -280,7 +280,7 @@ class ImageChallenge {
     for (const [objectKey, translations] of Object.entries(OBJECT_TRANSLATIONS)) {
       for (const translation of translations) {
         if (title.includes(translation.toLowerCase())) {
-          console.log(`🎯 识别到目标对象: ${objectKey} (匹配: "${translation}")`);
+          console.log(`[TARGET] 识别到目标对象: ${objectKey} (匹配: "${translation}")`);
           return objectKey;
         }
       }
@@ -290,11 +290,11 @@ class ImageChallenge {
     const keywords = title.match(/(?:select all (?:images )?with |click on all )([^.]+)/);
     if (keywords && keywords[1]) {
       const extracted = keywords[1].trim();
-      console.log(`🎯 提取的目标对象: ${extracted}`);
+      console.log(`[TARGET] 提取的目标对象: ${extracted}`);
       return extracted;
     }
 
-    console.warn(`⚠️  无法解析目标对象: "${challengeTitle}"`);
+    console.warn(`[WARN]  无法解析目标对象: "${challengeTitle}"`);
     return null;
   }
 
@@ -320,7 +320,7 @@ class ImageChallenge {
       }
     }
     
-    console.log('⏰ 图像验证等待超时');
+    console.log('[TIME] 图像验证等待超时');
     return false;
   }
 
@@ -328,13 +328,13 @@ class ImageChallenge {
    * 准备重试
    */
   async _prepareRetry(recaptchaBox) {
-    console.log('🔄 准备下一次图像挑战尝试...');
+    console.log('[RESTART] 准备下一次图像挑战尝试...');
     
     try {
       const reloadButton = await recaptchaBox.bframeFrame.$('#recaptcha-reload-button');
       if (reloadButton) {
         await reloadButton.click();
-        console.log('🔄 已点击重新加载按钮');
+        console.log('[RESTART] 已点击重新加载按钮');
         await new Promise(resolve => setTimeout(resolve, 3000));
       } else {
         console.log('⏳ 等待新图像挑战加载...');

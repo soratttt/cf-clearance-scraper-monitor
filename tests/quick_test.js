@@ -23,7 +23,7 @@ for (let i = 0; i < args.length; i++) {
 
 const baseUrl = `http://${host}:${port}`;
 
-console.log('📡 检查服务状态...');
+console.log('[STATUS] 检查服务状态...');
 
 // 检查服务是否运行
 function checkService() {
@@ -36,7 +36,7 @@ function checkService() {
             timeout: 5000
         }, (res) => {
             if (res.statusCode === 200) {
-                console.log('✅ 服务运行正常');
+                console.log('[OK] 服务运行正常');
                 resolve(true);
             } else {
                 reject(new Error(`服务返回状态码: ${res.statusCode}`));
@@ -58,8 +58,8 @@ function checkService() {
 // 测试 hCaptcha 解决器
 function testHcaptcha() {
     return new Promise((resolve, reject) => {
-        console.log('\n🎯 开始 hCaptcha 解决测试...');
-        console.log('⏱️  预计耗时: 30-120 秒');
+        console.log('\n[TARGET] 开始 hCaptcha 解决测试...');
+        console.log('[TIMER]  预计耗时: 30-120 秒');
         
         const testData = JSON.stringify({
             type: 'hcaptcha',
@@ -67,8 +67,8 @@ function testHcaptcha() {
             websiteKey: '338af34c-7bcb-4c7c-900b-acbec73d7d43'
         });
         
-        console.log(`📤 发送请求到: ${baseUrl}/`);
-        console.log('📤 请求数据:', {
+        console.log(`[REQUEST] 发送请求到: ${baseUrl}/`);
+        console.log('[REQUEST] 请求数据:', {
             type: 'hcaptcha',
             websiteUrl: 'https://accounts.hcaptcha.com/demo',
             websiteKey: '338af34c-7bcb-4c7c-900b-acbec73d7d43'
@@ -96,16 +96,16 @@ function testHcaptcha() {
                 const endTime = Date.now();
                 const duration = Math.round((endTime - startTime) / 1000);
                 
-                console.log('📥 收到响应:');
+                console.log('[RESPONSE] 收到响应:');
                 console.log('────────────────────────────────────────');
-                console.log(`⏱️  耗时: ${duration}s`);
-                console.log(`📊 状态码: ${res.statusCode}`);
+                console.log(`[TIMER]  耗时: ${duration}s`);
+                console.log(`[STATS] 状态码: ${res.statusCode}`);
                 
                 try {
                     const response = JSON.parse(data);
-                    console.log('📋 响应体:', response);
+                    console.log('[LIST] 响应体:', response);
                     
-                    console.log('\n🔍 响应验证:');
+                    console.log('\n[DEBUG] 响应验证:');
                     console.log('────────────────────────────────────────');
                     
                     // 验证响应
@@ -116,51 +116,51 @@ function testHcaptcha() {
                     const hasToken = 'token' in response;
                     const tokenValid = response.token && typeof response.token === 'string' && response.token.length > 0;
                     
-                    console.log(`${statusOk ? '✅' : '❌'} PASS HTTP Status: ${res.statusCode}`);
-                    console.log(`${formatOk ? '✅' : '❌'} PASS Response Format: ${formatOk ? 'Valid JSON' : 'Invalid JSON'}`);
-                    console.log(`${hasCode ? '✅' : '❌'} PASS Field: code: ${hasCode ? 'Present' : 'Missing'}`);
-                    console.log(`${hasMessage ? '✅' : '❌'} PASS Field: message: ${hasMessage ? 'Present' : 'Missing'}`);
+                    console.log(`${statusOk ? '[OK]' : '[FAIL]'} PASS HTTP Status: ${res.statusCode}`);
+                    console.log(`${formatOk ? '[OK]' : '[FAIL]'} PASS Response Format: ${formatOk ? 'Valid JSON' : 'Invalid JSON'}`);
+                    console.log(`${hasCode ? '[OK]' : '[FAIL]'} PASS Field: code: ${hasCode ? 'Present' : 'Missing'}`);
+                    console.log(`${hasMessage ? '[OK]' : '[FAIL]'} PASS Field: message: ${hasMessage ? 'Present' : 'Missing'}`);
                     
                     if (statusOk && response.code === 200) {
-                        console.log(`${tokenValid ? '✅' : '❌'} PASS Token: ${tokenValid ? 'Valid' : 'Invalid/Missing'}`);
+                        console.log(`${tokenValid ? '[OK]' : '[FAIL]'} PASS Token: ${tokenValid ? 'Valid' : 'Invalid/Missing'}`);
                     }
                     
                     const passedTests = [statusOk, formatOk, hasCode, hasMessage].filter(Boolean).length;
                     const totalTests = 4 + (statusOk && response.code === 200 ? 1 : 0);
                     
-                    console.log('\n📈 测试总结:');
+                    console.log('\n[INFO] 测试总结:');
                     console.log('────────────────────────────────────────');
-                    console.log(`✅ 通过验证: ${passedTests}/${totalTests}`);
-                    console.log(`⏱️  总耗时: ${duration}s`);
+                    console.log(`[OK] 通过验证: ${passedTests}/${totalTests}`);
+                    console.log(`[TIMER]  总耗时: ${duration}s`);
                     
                     if (statusOk && response.code === 200 && tokenValid) {
-                        console.log('🎉 hCaptcha 解决成功');
-                        console.log(`🔑 Token: ${response.token.substring(0, 50)}...`);
+                        console.log('[SUCCESS] hCaptcha 解决成功');
+                        console.log(`[KEY] Token: ${response.token.substring(0, 50)}...`);
                         resolve(response);
                     } else if (response.code === 500) {
-                        console.log('⚠️  hCaptcha 解决失败');
-                        console.log(`❌ 错误: ${response.message}`);
+                        console.log('[WARN]  hCaptcha 解决失败');
+                        console.log(`[FAIL] 错误: ${response.message}`);
                         reject(new Error(response.message || 'hCaptcha 解决失败'));
                     } else {
-                        console.log('⚠️  响应异常');
+                        console.log('[WARN]  响应异常');
                         reject(new Error(`意外的响应状态: ${res.statusCode}`));
                     }
                     
                 } catch (error) {
-                    console.log('📋 响应体 (原始):', data);
-                    console.log(`❌ JSON 解析失败: ${error.message}`);
+                    console.log('[LIST] 响应体 (原始):', data);
+                    console.log(`[FAIL] JSON 解析失败: ${error.message}`);
                     reject(new Error(`响应解析失败: ${error.message}`));
                 }
             });
         });
         
         req.on('error', (error) => {
-            console.log(`❌ 请求失败: ${error.message}`);
+            console.log(`[FAIL] 请求失败: ${error.message}`);
             reject(error);
         });
         
         req.on('timeout', () => {
-            console.log('❌ 请求超时 (3分钟)');
+            console.log('[FAIL] 请求超时 (3分钟)');
             reject(new Error('请求超时'));
         });
         
@@ -174,11 +174,11 @@ async function main() {
     try {
         await checkService();
         await testHcaptcha();
-        console.log('\n🎉 所有测试通过！hCaptcha 解决器工作正常！');
+        console.log('\n[SUCCESS] 所有测试通过！hCaptcha 解决器工作正常！');
         process.exit(0);
     } catch (error) {
-        console.log(`\n❌ 测试失败: ${error.message}`);
-        console.log('\n💡 解决建议:');
+        console.log(`\n[FAIL] 测试失败: ${error.message}`);
+        console.log('\n[INFO] 解决建议:');
         console.log('  1. 检查服务是否已启动');
         console.log('  2. 检查 .env 文件中的 GEMINI_API_KEY 配置');
         console.log('  3. 检查 Python 虚拟环境和依赖安装');

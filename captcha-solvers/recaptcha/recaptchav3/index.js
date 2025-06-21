@@ -36,7 +36,7 @@ class RecaptchaV3Solver {
       if (url.includes('recaptcha/api2/reload') || url.includes('recaptcha/enterprise/reload') || url.includes('recaptcha/api2/userverify')) {
         try {
           const text = await response.text();
-          console.log(`🔍 捕获到 reCAPTCHA API 响应: ${url}`);
+          console.log(`[DEBUG] 捕获到 reCAPTCHA API 响应: ${url}`);
           
           // 使用更精确的 token 提取方法（参考原始实现）
           let tokenMatch = text.match(/"rresp","([^"]+)"/);
@@ -48,14 +48,14 @@ class RecaptchaV3Solver {
           if (tokenMatch) {
             const token = tokenMatch[1];
             tokens.push(token);
-            console.log(`🎯 捕获到 reCAPTCHA v3 token (长度: ${token.length})`);
+            console.log(`[TARGET] 捕获到 reCAPTCHA v3 token (长度: ${token.length})`);
 
             // 尝试提取分数
             const scoreMatch = text.match(/"score":([0-9.]+)/);
             if (scoreMatch) {
               const score = parseFloat(scoreMatch[1]);
               scores.push(score);
-              console.log(`📊 Token 分数: ${score}`);
+              console.log(`[STATS] Token 分数: ${score}`);
             } else {
               scores.push(0.5); // 默认分数
             }
@@ -81,7 +81,7 @@ class RecaptchaV3Solver {
       await this._waitForRecaptchaLoad(page, Math.min(timeout, 15000));
 
       // 4. 首先尝试直接执行 reCAPTCHA v3
-      console.log(`🎯 尝试直接执行 reCAPTCHA v3 (动作: ${action})...`);
+      console.log(`[TARGET] 尝试直接执行 reCAPTCHA v3 (动作: ${action})...`);
       const executeResult = await this._executeRecaptcha(page, action, sitekey);
       
       if (executeResult.token) {
@@ -109,7 +109,7 @@ class RecaptchaV3Solver {
       }
 
       const solveTime = Date.now() - startTime;
-      console.log(`✅ reCAPTCHA v3 解决成功！`);
+      console.log(`[OK] reCAPTCHA v3 解决成功！`);
       console.log(`   Token长度: ${bestToken.token.length}`);
       console.log(`   分数: ${bestToken.score || 'unknown'}`);
       console.log(`   总耗时: ${solveTime}ms`);
@@ -124,7 +124,7 @@ class RecaptchaV3Solver {
 
     } catch (error) {
       const solveTime = Date.now() - startTime;
-      console.error(`❌ reCAPTCHA v3 解决失败 (${solveTime}ms):`, error.message);
+      console.error(`[FAIL] reCAPTCHA v3 解决失败 (${solveTime}ms):`, error.message);
       
       throw new RecaptchaSolveError(`reCAPTCHA v3 solving failed after ${solveTime}ms: ${error.message}`);
     } finally {
@@ -144,9 +144,9 @@ class RecaptchaV3Solver {
         () => window.grecaptcha && window.grecaptcha.execute,
         { timeout: Math.min(timeout, 10000) }
       );
-      console.log('✅ reCAPTCHA v3 脚本已加载');
+      console.log('[OK] reCAPTCHA v3 脚本已加载');
     } catch (error) {
-      console.log('⚠️  reCAPTCHA v3 脚本未在预期时间内加载，继续尝试...');
+      console.log('[WARN]  reCAPTCHA v3 脚本未在预期时间内加载，继续尝试...');
       // 不抛出错误，继续执行
     }
   }
@@ -155,7 +155,7 @@ class RecaptchaV3Solver {
    * 执行 reCAPTCHA v3
    */
   async _executeRecaptcha(page, action, sitekey) {
-    console.log(`🎯 执行 reCAPTCHA v3 (动作: ${action})...`);
+    console.log(`[TARGET] 执行 reCAPTCHA v3 (动作: ${action})...`);
 
     try {
       const result = await page.evaluate(async (action, sitekey) => {
@@ -244,18 +244,18 @@ class RecaptchaV3Solver {
       }, action, sitekey);
 
       if (result.error) {
-        console.warn(`⚠️  执行失败: ${result.error}`);
+        console.warn(`[WARN]  执行失败: ${result.error}`);
         return {};
       }
 
       if (result.token) {
-        console.log(`✅ 成功执行 reCAPTCHA v3 (方法: ${result.method})`);
-        console.log(`🔑 使用的 sitekey: ${result.sitekey}`);
+        console.log(`[OK] 成功执行 reCAPTCHA v3 (方法: ${result.method})`);
+        console.log(`[KEY] 使用的 sitekey: ${result.sitekey}`);
       }
 
       return result;
     } catch (error) {
-      console.warn(`⚠️  直接执行失败: ${error.message}`);
+      console.warn(`[WARN]  直接执行失败: ${error.message}`);
       return {};
     }
   }
@@ -331,7 +331,7 @@ class RecaptchaV3Solver {
             }
           }, 500);
           
-          console.log('✅ 已注入模拟 MetaMask 钱包');
+          console.log('[OK] 已注入模拟 MetaMask 钱包');
         }
         
         // 模拟其他常见钱包
@@ -360,9 +360,9 @@ class RecaptchaV3Solver {
         }
       });
       
-      console.log('✅ Web3 环境注入完成');
+      console.log('[OK] Web3 环境注入完成');
     } catch (error) {
-      console.warn('⚠️  Web3 环境注入失败:', error.message);
+      console.warn('[WARN]  Web3 环境注入失败:', error.message);
     }
   }
 
@@ -371,7 +371,7 @@ class RecaptchaV3Solver {
    */
   async _triggerThroughInteraction(page, action, sitekey) {
     try {
-      console.log('🔍 分析页面，寻找触发元素...');
+      console.log('[DEBUG] 分析页面，寻找触发元素...');
       
       const interactionResult = await page.evaluate(async (action, sitekey) => {
         const interactions = [];
@@ -485,7 +485,7 @@ class RecaptchaV3Solver {
         
         // 6. 如果没有找到特定按钮，启用智能元素检测
         if (uniqueLoginButtons.length === 0) {
-          console.log('🔍 启用智能元素检测模式...');
+          console.log('[DEBUG] 启用智能元素检测模式...');
           
           // 智能元素检测函数
           const smartElementDetection = async () => {
@@ -838,10 +838,10 @@ class RecaptchaV3Solver {
         return { success: false, interactions };
       }, action, sitekey);
       
-      console.log('🔄 交互结果:', interactionResult.interactions);
+      console.log('[RESTART] 交互结果:', interactionResult.interactions);
       
       if (interactionResult.success && interactionResult.token) {
-        console.log('✅ 通过交互成功获取 token');
+        console.log('[OK] 通过交互成功获取 token');
         return interactionResult.token;
       }
       
@@ -895,7 +895,7 @@ class RecaptchaV3Solver {
       }
     }
 
-    console.log(`🎯 选择最佳 token (索引: ${bestIndex}, 分数: ${bestScore})`);
+    console.log(`[TARGET] 选择最佳 token (索引: ${bestIndex}, 分数: ${bestScore})`);
 
     return {
       token: tokens[bestIndex],
@@ -954,7 +954,7 @@ class RecaptchaV3Solver {
    * 验证环境依赖
    */
   async validateEnvironment() {
-    console.log('✅ reCAPTCHA v3 无需额外环境依赖');
+    console.log('[OK] reCAPTCHA v3 无需额外环境依赖');
     return { valid: true, issues: [] };
   }
 }

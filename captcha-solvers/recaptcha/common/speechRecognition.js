@@ -50,7 +50,7 @@ class SpeechRecognition {
           if (code === 0) {
             const result = stdout.trim();
             if (result && result !== 'ERROR' && result !== 'TIMEOUT') {
-              console.log(`✅ 语音识别成功: "${result}"`);
+              console.log(`[OK] 语音识别成功: "${result}"`);
               resolve(result);
             } else {
               reject(new AudioTranscriptionError(`Speech recognition failed: ${stderr || 'Unknown error'}`));

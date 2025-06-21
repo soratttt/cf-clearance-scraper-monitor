@@ -105,7 +105,7 @@ check_python_version() {
         if [ -n "$CURRENT_PYTHON_VERSION" ]; then
             echo "当前Python版本: $CURRENT_PYTHON_VERSION"
             if version_gt "3.10.0" "$CURRENT_PYTHON_VERSION"; then
-                echo "⚠️  Python版本过低 (需要 3.10+)，需要升级"
+                echo "[WARN]  Python版本过低 (需要 3.10+)，需要升级"
                 return 1
             else
                 echo "✓ Python版本符合要求 (版本: $CURRENT_PYTHON_VERSION)"
@@ -272,13 +272,13 @@ for package, name in packages:
         print(f'  ✓ {name}')
         success_count += 1
     except ImportError:
-        print(f'  ⚠️ {name}: 导入失败')
+        print(f'  [WARN] {name}: 导入失败')
 
-print(f'📊 导入结果: {success_count}/{len(packages)} 成功')
+print(f'[STATS] 导入结果: {success_count}/{len(packages)} 成功')
 if success_count >= 4:
-    print('✅ 核心验证码解决器可用')
+    print('[OK] 核心验证码解决器可用')
 else:
-    print('⚠️ 部分验证码功能可能不可用')
+    print('[WARN] 部分验证码功能可能不可用')
 "
     
 else
@@ -293,7 +293,7 @@ echo "提示：如果系统弹出防火墙询问，请选择"允许"以便局域
 echo -e "${YELLOW}[8/8] 准备启动服务...${NC}"
 
 # 检查端口是否被占用
-PORT=3000  # 🔧 修改这里的端口号
+PORT=3000  # [CONFIG] 修改这里的端口号
 if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null ; then
     echo -e "${YELLOW}端口 $PORT 已被占用，尝试关闭现有进程...${NC}"
     lsof -ti:$PORT | xargs kill -9 2>/dev/null || true

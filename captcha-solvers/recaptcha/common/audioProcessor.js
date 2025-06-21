@@ -38,7 +38,7 @@ class AudioProcessor {
       }, audioUrl);
 
       const audioBuffer = Buffer.from(response);
-      console.log(`✅ 音频下载完成，大小: ${audioBuffer.length} bytes`);
+      console.log(`[OK] 音频下载完成，大小: ${audioBuffer.length} bytes`);
       
       return audioBuffer;
     } catch (error) {
@@ -64,7 +64,7 @@ class AudioProcessor {
       try {
         // 写入临时文件
         fs.writeFileSync(inputPath, audioBuffer);
-        console.log(`🔄 开始音频转换: ${inputFormat} → WAV`);
+        console.log(`[RESTART] 开始音频转换: ${inputFormat} → WAV`);
 
         // FFmpeg 转换命令
         const ffmpeg = spawn('ffmpeg', [
@@ -92,7 +92,7 @@ class AudioProcessor {
             try {
               const wavBuffer = fs.readFileSync(outputPath);
               fs.unlinkSync(outputPath); // 清理输出文件
-              console.log(`✅ 音频转换完成，WAV大小: ${wavBuffer.length} bytes`);
+              console.log(`[OK] 音频转换完成，WAV大小: ${wavBuffer.length} bytes`);
               resolve(wavBuffer);
             } catch (error) {
               reject(new AudioTranscriptionError(`Failed to read converted audio: ${error.message}`));
@@ -139,7 +139,7 @@ class AudioProcessor {
         throw new AudioTranscriptionError('Transcription result is empty');
       }
 
-      console.log(`✅ 语音识别完成: "${transcription}"`);
+      console.log(`[OK] 语音识别完成: "${transcription}"`);
       return transcription.trim();
 
     } catch (error) {
@@ -180,7 +180,7 @@ class AudioProcessor {
     */
 
     // 临时实现：返回模拟结果
-    console.log('⚠️  当前使用模拟语音识别结果');
+    console.log('[WARN]  当前使用模拟语音识别结果');
     console.log('   请集成真实的本地 STT 模型以获得实际功能');
     
     // 模拟一些常见的 reCAPTCHA 音频内容

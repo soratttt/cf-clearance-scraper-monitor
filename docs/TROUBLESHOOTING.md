@@ -155,7 +155,7 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 🌐 浏览器问题
+### [NETWORK] 浏览器问题
 
 #### 1. Chromium 启动失败
 
@@ -440,7 +440,7 @@ echo "8.8.8.8 google.com" >> /etc/hosts
 
 ```bash
 # 查看错误日志
-grep "ERROR\|❌" service.log
+grep "ERROR\|[FAIL]" service.log
 
 # 统计错误类型
 grep "ERROR" service.log | cut -d']' -f2 | sort | uniq -c
@@ -460,8 +460,8 @@ grep "总耗时" service.log | grep -o '[0-9]*ms' | sed 's/ms//' | awk '{sum+=$1
 
 ```bash
 # 统计成功/失败请求
-success=$(grep "✅.*返回结果" service.log | wc -l)
-failed=$(grep "❌\|ERROR" service.log | wc -l)
+success=$(grep "[OK].*返回结果" service.log | wc -l)
+failed=$(grep "[FAIL]\|ERROR" service.log | wc -l)
 total=$((success + failed))
 rate=$(echo "scale=2; $success * 100 / $total" | bc)
 echo "成功率: $rate%"
@@ -524,7 +524,7 @@ python3 --version
 
 # 服务信息
 curl http://localhost:3000/api/monitor
-grep "ERROR\|❌" service.log | tail -10
+grep "ERROR\|[FAIL]" service.log | tail -10
 
 # 配置信息（隐敏感信息）
 cat .env | sed 's/API_KEY=.*/API_KEY=***hidden***/'

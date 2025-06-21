@@ -78,7 +78,7 @@ function startService(config) {
         return;
     }
     
-    console.log('🚀 CF Clearance Scraper 启动中...\n');
+    console.log('[START] CF Clearance Scraper 启动中...\n');
     console.log('配置信息:');
     Object.entries(config).forEach(([key, value]) => {
         console.log(`  ${key}: ${value}`);
@@ -107,27 +107,27 @@ function startService(config) {
     // 处理进程退出
     child.on('close', (code) => {
         if (code !== 0) {
-            console.error(`❌ 服务异常退出，退出码: ${code}`);
-        } else {
-            console.log('✅ 服务正常退出');
+                    console.error(`[ERROR] 服务异常退出，退出码: ${code}`);
+    } else {
+        console.log('[OK] 服务正常退出');
         }
         process.exit(code);
     });
     
     // 处理错误
     child.on('error', (err) => {
-        console.error('❌ 启动失败:', err.message);
+        console.error('[ERROR] 启动失败:', err.message);
         process.exit(1);
     });
     
     // 优雅退出处理
     process.on('SIGINT', () => {
-        console.log('\n📤 正在停止服务...');
+        console.log('\n[REQUEST] 正在停止服务...');
         child.kill('SIGINT');
     });
     
     process.on('SIGTERM', () => {
-        console.log('\n📤 正在停止服务...');
+        console.log('\n[REQUEST] 正在停止服务...');
         child.kill('SIGTERM');
     });
 }

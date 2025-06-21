@@ -93,7 +93,7 @@ async function getCfClearance({ url, proxy }) {
           const cfClearanceCookie = cookies.find(cookie => cookie.name === 'cf_clearance');
           
           if (cfClearanceCookie && cfClearanceCookie.value) {
-            console.log('✅ 成功获取 cf_clearance cookie');
+            console.log('[OK] 成功获取 cf_clearance cookie');
             isResolved = true;
             clearTimeout(timeoutHandler);
             await cleanup();
@@ -112,11 +112,11 @@ async function getCfClearance({ url, proxy }) {
           if (isCloudflareChallenge) {
             console.log(`⏳ Cloudflare 验证中... (${i * checkInterval}/${maxWaitTime}s)`);
           } else {
-            console.log(`🔍 页面已加载，等待 cf_clearance cookie... (${i * checkInterval}/${maxWaitTime}s)`);
+            console.log(`[DEBUG] 页面已加载，等待 cf_clearance cookie... (${i * checkInterval}/${maxWaitTime}s)`);
             
             // 如果页面已经加载完成但没有验证页面，可能需要刷新一下
             if (i > 5 && i % 10 === 0) {
-              console.log('🔄 尝试刷新页面以触发 Cloudflare 验证...');
+              console.log('[RESTART] 尝试刷新页面以触发 Cloudflare 验证...');
               await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
             }
           }

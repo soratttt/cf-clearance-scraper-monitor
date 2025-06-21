@@ -2,7 +2,7 @@
 
 本文档介绍如何测试 hCaptcha 解决器的部署状态，确保所有组件正常工作。
 
-## 🧪 测试脚本
+## [TEST] 测试脚本
 
 项目提供了三个测试脚本，适用于不同的测试场景：
 
@@ -64,7 +64,7 @@ node quick_test.js
 node quick_test.js --host 192.168.1.100 --port 3000
 ```
 
-## 📋 测试流程建议
+## [LIST] 测试流程建议
 
 ### 新部署测试
 
@@ -100,35 +100,35 @@ node test_hcaptcha_deployment.js
 node quick_test.js --host 192.168.1.100 --port 3000
 ```
 
-## 🔍 测试项目说明
+## [DEBUG] 测试项目说明
 
 ### 环境配置检查
-- ✅ `.env` 文件存在
-- ✅ `GEMINI_API_KEY` 已配置且非示例值
-- ✅ 端口配置正常
+- [OK] `.env` 文件存在
+- [OK] `GEMINI_API_KEY` 已配置且非示例值
+- [OK] 端口配置正常
 
 ### 依赖检查
-- ✅ `package.json` 存在
-- ✅ `node_modules` 目录存在
-- ✅ 关键依赖包已安装
+- [OK] `package.json` 存在
+- [OK] `node_modules` 目录存在
+- [OK] 关键依赖包已安装
 
 ### Python 环境检查
-- ✅ Python 虚拟环境存在
-- ✅ `hcaptcha-challenger` 包可导入
-- ✅ `playwright` 包可导入
-- ✅ API 密钥在 Python 中可读取
+- [OK] Python 虚拟环境存在
+- [OK] `hcaptcha-challenger` 包可导入
+- [OK] `playwright` 包可导入
+- [OK] API 密钥在 Python 中可读取
 
 ### 服务状态检查
-- ✅ 服务在指定端口运行
-- ✅ 监控页面可访问
-- ✅ API 端点响应正常
+- [OK] 服务在指定端口运行
+- [OK] 监控页面可访问
+- [OK] API 端点响应正常
 
 ### hCaptcha 功能测试
-- ✅ 成功解决验证码
-- ✅ 返回有效 token
-- ✅ 响应时间合理 (通常 30-120 秒)
+- [OK] 成功解决验证码
+- [OK] 返回有效 token
+- [OK] 响应时间合理 (通常 30-120 秒)
 
-## ❌ 常见问题排查
+## [FAIL] 常见问题排查
 
 ### API 密钥相关
 
@@ -175,84 +175,84 @@ playwright install chromium
 3. **依赖缺失**: 重新运行一键部署脚本
 4. **浏览器问题**: 确保 Chromium 已正确安装
 
-## 🎯 成功测试示例
+## [TARGET] 成功测试示例
 
 ### 完整测试成功输出
 ```
-🧪 hCaptcha 部署测试开始
-🌐 测试目标: http://localhost:3000
+[TEST] hCaptcha 部署测试开始
+[NETWORK] 测试目标: http://localhost:3000
 
-🔍 [1/6] 检查环境配置...
-✅ 环境配置文件: .env 文件存在
-✅ Gemini API 密钥配置: API 密钥已配置
-✅ 端口配置: 端口配置正常
+[DEBUG] [1/6] 检查环境配置...
+[OK] 环境配置文件: .env 文件存在
+[OK] Gemini API 密钥配置: API 密钥已配置
+[OK] 端口配置: 端口配置正常
 
-📦 [2/6] 检查 Node.js 依赖...
-✅ package.json: package.json 存在
-✅ Node.js 依赖: node_modules 目录存在
+[PACKAGE] [2/6] 检查 Node.js 依赖...
+[OK] package.json: package.json 存在
+[OK] Node.js 依赖: node_modules 目录存在
 
-🐍 [3/6] 检查 Python 环境...
-✅ Python 虚拟环境: 虚拟环境存在
-✅ Python 版本: Python 3.11.0
-✅ hcaptcha-challenger: 模块可用
-✅ Playwright: 模块可用
-✅ API 密钥在 Python 中可读: API 密钥配置正确
+[PYTHON] [3/6] 检查 Python 环境...
+[OK] Python 虚拟环境: 虚拟环境存在
+[OK] Python 版本: Python 3.11.0
+[OK] hcaptcha-challenger: 模块可用
+[OK] Playwright: 模块可用
+[OK] API 密钥在 Python 中可读: API 密钥配置正确
 
-🌐 [4/6] 检查服务状态...
-✅ 服务可访问性: 服务在 http://localhost:3000 正常运行
-✅ 监控页面: 监控页面可访问
+[NETWORK] [4/6] 检查服务状态...
+[OK] 服务可访问性: 服务在 http://localhost:3000 正常运行
+[OK] 监控页面: 监控页面可访问
 
-🔌 [5/6] 测试基础 API...
-✅ API 端点响应: API 正确拒绝了无效请求
-✅ JSON 响应格式: 返回格式正确
+[CONNECT] [5/6] 测试基础 API...
+[OK] API 端点响应: API 正确拒绝了无效请求
+[OK] JSON 响应格式: 返回格式正确
 
-🎯 [6/6] 测试 hCaptcha 解决器...
-✅ hCaptcha 解决器: 成功解决验证码 (45秒)
-✅ Token 生成: Token: P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+[TARGET] [6/6] 测试 hCaptcha 解决器...
+[OK] hCaptcha 解决器: 成功解决验证码 (45秒)
+[OK] Token 生成: Token: P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 
-📊 测试总结
+[STATS] 测试总结
 ==================================================
-🎉 所有测试通过! (12/12)
-✅ hCaptcha 解决器部署成功，可以正常使用！
+[SUCCESS] 所有测试通过! (12/12)
+[OK] hCaptcha 解决器部署成功，可以正常使用！
 ```
 
 ### 快速测试成功输出
 ```
-📡 检查服务状态...
-✅ 服务运行正常
+[STATUS] 检查服务状态...
+[OK] 服务运行正常
 
-🎯 开始 hCaptcha 解决测试...
-⏱️  预计耗时: 30-120 秒
+[TARGET] 开始 hCaptcha 解决测试...
+[TIMER]  预计耗时: 30-120 秒
 
-📤 发送请求到: http://localhost:3000/
-📥 收到响应:
+[REQUEST] 发送请求到: http://localhost:3000/
+[RESPONSE] 收到响应:
 ────────────────────────────────────────
-⏱️  耗时: 42s
-📊 状态码: 200
-📋 响应体: {
+[TIMER]  耗时: 42s
+[STATS] 状态码: 200
+[LIST] 响应体: {
   "code": 200,
   "message": "hCaptcha solved successfully",
   "token": "P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 
-🔍 响应验证:
+[DEBUG] 响应验证:
 ────────────────────────────────────────
-✅ PASS HTTP Status: 200
-✅ PASS Response Format: Valid JSON
-✅ PASS Field: code: Present
-✅ PASS Field: message: Present
-✅ PASS Token: Valid
+[OK] PASS HTTP Status: 200
+[OK] PASS Response Format: Valid JSON
+[OK] PASS Field: code: Present
+[OK] PASS Field: message: Present
+[OK] PASS Token: Valid
 
-📈 测试总结:
+[INFO] 测试总结:
 ────────────────────────────────────────
-✅ 通过验证: 5/5
-⏱️  总耗时: 42s
-🎉 hCaptcha 解决成功
+[OK] 通过验证: 5/5
+[TIMER]  总耗时: 42s
+[SUCCESS] hCaptcha 解决成功
 
-🎉 所有测试通过！hCaptcha 解决器工作正常！
+[SUCCESS] 所有测试通过！hCaptcha 解决器工作正常！
 ```
 
-## 💡 提示
+## [INFO] 提示
 
 1. **首次部署**: 建议运行完整测试确保所有组件正常
 2. **日常维护**: 使用快速测试即可

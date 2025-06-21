@@ -1,35 +1,126 @@
 @echo off
 title CF Clearance Scraper - Windows Deploy
 
+REM Enable delayed variable expansion
+setlocal EnableDelayedExpansion
+
+REM Error handling setup
+set "SCRIPT_ERROR=0"
+
+REM Debug mode switch (set to 1 to enable debug output)
+set "DEBUG_MODE=0"
+
 echo.
 echo ========== CF Clearance Scraper ==========
-echo Windows One-Click Deployment
+echo Windows One-Click Deployment v1.0.4
 echo.
 
-cd /d "%~dp0"
+REM Check if debug mode is needed
+if "%1"=="--debug" set "DEBUG_MODE=1"
+if "%1"=="-d" set "DEBUG_MODE=1"
 
-:: Check Node.js
-echo [1/5] Checking Node.js...
-where node >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [ERROR] Node.js not found!
-    echo.
-    echo Please install Node.js:
-    echo 1. Visit: https://nodejs.org
-    echo 2. Download LTS version ^(18+ recommended^)
-    echo 3. Install and restart this script
-    echo.
-    echo Opening Node.js website...
-    start https://nodejs.org
-    pause
-    exit /b 1
-) else (
-    echo [OK] Node.js found
-    node --version
+if %DEBUG_MODE%==1 (
+    echo [DEBUG] Debug mode enabled. Use without --debug flag for normal operation.
     echo.
 )
 
-:: Check Google Chrome
+REM Add error handling to prevent immediate closure
+set "ERROR_OCCURRED=0"
+
+cd /d "%~dp0"
+
+REM Check Node.js
+echo [1/5] Checking Node.js...
+
+REM Refresh environment variables - simple version for early execution
+set "PATH=%PATH%;%ProgramFiles%\nodejs;%ProgramFiles(x86)%\nodejs;%USERPROFILE%\AppData\Roaming\npm"
+
+if %DEBUG_MODE%==1 (
+    echo [DEBUG] Current PATH: %PATH%
+)
+echo.
+
+REM Check multiple possible Node.js locations
+set NODE_FOUND=0
+set NODE_CMD=
+
+REM First try where command
+if %DEBUG_MODE%==1 echo [DEBUG] Trying 'where node' command...
+where node >nul 2>&1
+if %errorLevel% equ 0 (
+    if %DEBUG_MODE%==1 echo [DEBUG] 'where node' succeeded
+    set NODE_FOUND=1
+    set NODE_CMD=node
+    goto :node_found
+) else (
+    if %DEBUG_MODE%==1 echo [DEBUG] 'where node' failed with error level %errorLevel%
+)
+
+REM Check common installation paths
+if %DEBUG_MODE%==1 echo [DEBUG] Checking %ProgramFiles%\nodejs\node.exe
+if exist "%ProgramFiles%\nodejs\node.exe" (
+    if %DEBUG_MODE%==1 echo [DEBUG] Found Node.js at Program Files
+    set NODE_FOUND=1
+    set NODE_CMD="%ProgramFiles%\nodejs\node.exe"
+    set PATH=%ProgramFiles%\nodejs;%PATH%
+    goto :node_found
+)
+
+if %DEBUG_MODE%==1 echo [DEBUG] Checking %ProgramFiles(x86)%\nodejs\node.exe
+if exist "%ProgramFiles(x86)%\nodejs\node.exe" (
+    if %DEBUG_MODE%==1 echo [DEBUG] Found Node.js at Program Files (x86)
+    set NODE_FOUND=1
+    set NODE_CMD="%ProgramFiles(x86)%\nodejs\node.exe"
+    set PATH=%ProgramFiles(x86)%\nodejs;%PATH%
+    goto :node_found
+)
+
+REM Check user directory
+if %DEBUG_MODE%==1 echo [DEBUG] Checking %USERPROFILE%\AppData\Roaming\npm\node.exe
+if exist "%USERPROFILE%\AppData\Roaming\npm\node.exe" (
+    if %DEBUG_MODE%==1 echo [DEBUG] Found Node.js at user AppData
+    set NODE_FOUND=1
+    set NODE_CMD="%USERPROFILE%\AppData\Roaming\npm\node.exe"
+    set PATH=%USERPROFILE%\AppData\Roaming\npm;%PATH%
+    goto :node_found
+)
+
+:node_not_found
+echo [ERROR] Node.js not found!
+echo.
+echo Checked locations:
+echo   - System PATH
+echo   - %ProgramFiles%\nodejs\
+echo   - %ProgramFiles(x86)%\nodejs\
+echo   - %USERPROFILE%\AppData\Roaming\npm\
+echo.
+echo Please install Node.js:
+echo 1. Visit: https://nodejs.org
+echo 2. Download LTS version ^(18+ recommended^)
+echo 3. Make sure to check "Add to PATH" during installation
+echo 4. Restart this script after installation
+echo.
+echo Press any key to open Node.js website or Ctrl+C to exit...
+pause >nul
+start https://nodejs.org
+echo.
+echo Press any key to continue without Node.js or Ctrl+C to exit...
+pause >nul
+goto :check_chrome
+
+:node_found
+echo [OK] Node.js found
+if %DEBUG_MODE%==1 echo [DEBUG] Using Node.js command: %NODE_CMD%
+for /f "tokens=*" %%i in ('%NODE_CMD% --version 2^>nul') do set NODE_VERSION=%%i
+if defined NODE_VERSION (
+    echo Version: %NODE_VERSION%
+) else (
+    echo [WARNING] Could not get Node.js version, but executable found
+)
+echo.
+
+:check_chrome
+REM Check Google Chrome
 echo [2/5] Checking Google Chrome...
 if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
     echo [OK] Google Chrome found
@@ -51,34 +142,52 @@ if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
     pause >nul
 )
 
-:: Install dependencies
+REM Install dependencies
 echo.
 echo [3/5] Installing dependencies...
+
+REM Set npm command path
+set NPM_CMD=npm
+if defined NODE_CMD (
+    REM If Node.js found, try to find corresponding npm
+    if exist "%ProgramFiles%\nodejs\npm.cmd" (
+        set NPM_CMD="%ProgramFiles%\nodejs\npm.cmd"
+    ) else if exist "%ProgramFiles(x86)%\nodejs\npm.cmd" (
+        set NPM_CMD="%ProgramFiles(x86)%\nodejs\npm.cmd"
+    ) else if exist "%USERPROFILE%\AppData\Roaming\npm\npm.cmd" (
+        set NPM_CMD="%USERPROFILE%\AppData\Roaming\npm\npm.cmd"
+    )
+)
+
 if not exist "node_modules" (
     echo Installing packages, please wait...
-    npm install
+    %NPM_CMD% install
     if %errorLevel% neq 0 (
         echo [ERROR] Installation failed, trying clean install...
         if exist "node_modules" rmdir /s /q "node_modules"
         if exist "package-lock.json" del "package-lock.json"
-        npm install
+        %NPM_CMD% install
         if %errorLevel% neq 0 (
             echo [ERROR] Installation failed. Please check internet connection.
-            pause
-            exit /b 1
+            echo [INFO] NPM Command used: %NPM_CMD%
+            echo.
+            echo Press any key to continue or Ctrl+C to exit...
+            pause >nul
+            goto :check_python
         )
     )
     echo [OK] Dependencies installed successfully
 ) else (
     echo [OK] Dependencies already installed
-    npm ci >nul 2>&1 || echo [INFO] Skipping dependency update
+    %NPM_CMD% ci >nul 2>&1 || echo [INFO] Skipping dependency update
 )
 
-:: Check and Install Python environment
+:check_python
+REM Check and Install Python environment
 echo.
 echo [4/7] Checking and Installing Python environment...
 
-:: Function to compare version numbers (Windows batch equivalent)
+REM Function to compare version numbers (Windows batch equivalent)
 :check_python_version
 setlocal
 if exist "%~1\python.exe" (
@@ -89,13 +198,13 @@ if exist "%~1\python.exe" (
     endlocal & exit /b 1
 )
 
-:: Extract major and minor version
+REM Extract major and minor version
 for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do (
     set MAJOR=%%a
     set MINOR=%%b
 )
 
-:: Check if version is 3.10+
+REM Check if version is 3.10+
 if %MAJOR% LSS 3 (
     endlocal & exit /b 1
 ) else if %MAJOR% EQU 3 (
@@ -107,11 +216,11 @@ if %MAJOR% LSS 3 (
 echo [OK] Python %PYTHON_VERSION% meets requirements
 endlocal & exit /b 0
 
-:: Check current Python installation
+REM Check current Python installation
 set PYTHON_FOUND=0
 set PYTHON_CMD=
 
-:: Check different possible Python locations
+REM Check different possible Python locations
 where python >nul 2>&1
 if %errorLevel% equ 0 (
     call :check_python_version ""
@@ -141,7 +250,7 @@ if %errorLevel% equ 0 (
 if %PYTHON_FOUND% equ 0 (
     echo [INFO] Python 3.10+ not found, installing latest version...
     
-    :: Check for package managers
+    REM Check for package managers
     where choco >nul 2>&1
     if %errorLevel% equ 0 (
         echo Installing Python via Chocolatey...
@@ -164,7 +273,7 @@ if %PYTHON_FOUND% equ 0 (
         )
     )
     
-    :: Manual installation
+    REM Manual installation
     echo [INFO] No package manager found, opening manual download...
     echo.
     echo Python installation required:
@@ -180,7 +289,7 @@ if %PYTHON_FOUND% equ 0 (
 )
 
 :verify_python
-:: Verify Python installation
+REM Verify Python installation
 where %PYTHON_CMD% >nul 2>&1
 if %errorLevel% equ 0 (
     for /f "tokens=2" %%i in ('%PYTHON_CMD% --version 2^>^&1') do echo [OK] Python %%i is ready
@@ -190,22 +299,22 @@ if %errorLevel% equ 0 (
 
 :skip_python_verify
 
-:: Install Python captcha solver dependencies
+REM Install Python captcha solver dependencies
 echo.
 echo [5/7] Installing Python captcha solver dependencies...
 
-:: Check unified requirements file
+REM Check unified requirements file
 set CAPTCHA_SOLVERS_DIR=captcha-solvers
 set UNIFIED_REQUIREMENTS=%CAPTCHA_SOLVERS_DIR%\requirements.txt
 
 if defined PYTHON_CMD (
     echo Installing unified Python dependencies...
     
-    :: Upgrade pip
+    REM Upgrade pip
     echo Upgrading pip...
     %PYTHON_CMD% -m pip install --user --upgrade pip >nul 2>&1
     
-    :: Install unified dependencies
+    REM Install unified dependencies
     if exist "%UNIFIED_REQUIREMENTS%" (
         echo Installing from unified requirements file...
         %PYTHON_CMD% -m pip install --user -r "%UNIFIED_REQUIREMENTS%" >nul 2>&1
@@ -221,19 +330,19 @@ if defined PYTHON_CMD (
         set DEPS_INSTALLED=false
     )
     
-    :: If unified installation failed, try manual installation
+    REM If unified installation failed, try manual installation
     if "%DEPS_INSTALLED%"=="false" (
         echo Installing core dependencies manually...
         
-        :: hCaptcha core dependencies
+        REM hCaptcha core dependencies
         echo Installing hCaptcha dependencies...
         %PYTHON_CMD% -m pip install --user hcaptcha-challenger google-genai playwright opencv-python numpy pillow httpx loguru pydantic-settings >nul 2>&1
         
-        :: reCaptcha core dependencies
+        REM reCaptcha core dependencies
         echo Installing reCaptcha dependencies...
         %PYTHON_CMD% -m pip install --user DrissionPage pydub SpeechRecognition >nul 2>&1
         
-        :: Common dependencies
+        REM Common dependencies
         echo Installing common dependencies...
         %PYTHON_CMD% -m pip install --user python-dotenv pathlib2 >nul 2>&1
         
@@ -244,7 +353,7 @@ if defined PYTHON_CMD (
         )
     )
     
-    :: Install Playwright browser
+    REM Install Playwright browser
     echo Installing Playwright browser...
     %PYTHON_CMD% -m playwright install chromium >nul 2>&1
     if %errorLevel% equ 0 (
@@ -253,7 +362,7 @@ if defined PYTHON_CMD (
         echo [WARNING] Playwright browser installation failed
     )
     
-    :: Test key package imports
+    REM Test key package imports
     echo Testing dependency imports...
     echo Testing hcaptcha_challenger...
     %PYTHON_CMD% -c "import hcaptcha_challenger; print('  [OK] hCaptcha Challenger')" 2>nul || echo   [WARNING] hCaptcha Challenger: Import failed
@@ -273,11 +382,11 @@ if defined PYTHON_CMD (
     echo [WARNING] Python not available, skipping captcha solver installation
 )
 
-:: Configure system and firewall
+REM Configure system and firewall
 echo.
 echo [6/7] Configuring system...
 set PORT=3000
-REM 🔧 修改上面这行的端口号
+REM Change the port number above
 
 echo Configuring Windows Firewall...
 netsh advfirewall firewall delete rule name="CF Clearance Scraper" >nul 2>&1
@@ -289,12 +398,12 @@ if %errorLevel% equ 0 (
     echo Please manually allow port %PORT% in Windows Firewall if needed
 )
 
-:: Kill existing processes
+REM Kill existing processes
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%PORT% ^| findstr LISTENING') do (
     taskkill /PID %%a /F >nul 2>&1
 )
 
-:: Create environment file if not exists
+REM Create environment file if not exists
 if not exist "..\..\env" (
     echo Creating default environment configuration...
     echo # CF Clearance Scraper Environment Configuration > ..\..\env
@@ -306,7 +415,7 @@ if not exist "..\..\env" (
     echo [OK] Environment file created
 )
 
-:: Get LAN IP
+REM Get LAN IP
 for /f "tokens=2 delims=:" %%i in ('ipconfig ^| findstr /i "IPv4" ^| findstr 192.168') do (
     set "LAN_IP=%%i"
     set "LAN_IP=%LAN_IP: =%"
@@ -333,17 +442,25 @@ echo Press Ctrl+C to stop service
 echo ====================================
 echo.
 
-:: Start service
+REM Start service
 echo.
 echo [7/7] Starting service...
 set NODE_ENV=production
 set PORT=%PORT%
 
-:: Check for startup file
+REM Check for startup file
 if exist "start.js" (
-    node start.js
+    if defined NODE_CMD (
+        %NODE_CMD% start.js
+    ) else (
+        node start.js
+    )
 ) else if exist "src\index.js" (
-    node src\index.js
+    if defined NODE_CMD (
+        %NODE_CMD% src\index.js
+    ) else (
+        node src\index.js
+    )
 ) else (
     echo [ERROR] Startup file not found
     echo Looking for start.js or src\index.js
@@ -354,3 +471,53 @@ if exist "start.js" (
 echo.
 echo Service stopped.
 pause
+goto :end_script
+
+REM ========== Function Definitions ==========
+
+:refresh_env
+REM Environment variable refresh function
+call :debug_echo "Refreshing environment variables..."
+
+REM Save current PATH
+set "OriginalPath=%PATH%"
+
+REM Re-read environment variables from registry
+set "SysPath="
+set "UserPath="
+
+for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "SysPath=%%b"
+for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v PATH 2^>nul') do set "UserPath=%%b"
+
+REM Merge paths
+if defined SysPath (
+    if defined UserPath (
+        set "PATH=%UserPath%;%SysPath%"
+    ) else (
+        set "PATH=%SysPath%"
+    )
+) else (
+    call :debug_echo "Could not read system PATH from registry, keeping original"
+)
+
+REM Ensure common paths are included
+set "PATH=%PATH%;%ProgramFiles%\nodejs;%ProgramFiles(x86)%\nodejs;%USERPROFILE%\AppData\Roaming\npm"
+
+call :debug_echo "Environment refresh completed"
+goto :eof
+
+:debug_echo
+REM Debug output function
+if %DEBUG_MODE%==1 (
+    echo [DEBUG] %~1
+)
+goto :eof
+
+:end_script
+REM Script cleanup and exit
+if %ERROR_OCCURRED%==1 (
+    echo.
+    echo [ERROR] Script encountered errors. Press any key to exit...
+    pause >nul
+)
+exit /b 0

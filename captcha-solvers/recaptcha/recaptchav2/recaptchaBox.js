@@ -18,7 +18,7 @@ class RecaptchaBoxV2 {
    * 初始化并查找 reCAPTCHA frames
    */
   async initialize() {
-    console.log('🔍 正在查找 reCAPTCHA v2 frames...');
+    console.log('[DEBUG] 正在查找 reCAPTCHA v2 frames...');
     
     // 等待更长时间让 reCAPTCHA 完全加载
     await this.page.waitForTimeout(3000);
@@ -31,7 +31,7 @@ class RecaptchaBoxV2 {
         this.page.waitForFunction(() => window.grecaptcha !== undefined, { timeout: 15000 })
       ]);
     } catch (error) {
-      console.log('⚠️  标准检测失败，尝试手动检查...');
+      console.log('[WARN]  标准检测失败，尝试手动检查...');
       
       // 手动检查页面内容
       const hasRecaptcha = await this.page.evaluate(() => {
@@ -53,7 +53,7 @@ class RecaptchaBoxV2 {
     await this.page.waitForTimeout(2000);
     const frames = this.page.frames();
     
-    console.log(`📋 检测到 ${frames.length} 个框架:`);
+    console.log(`[LIST] 检测到 ${frames.length} 个框架:`);
     frames.forEach((frame, index) => {
       console.log(`   框架 ${index}: ${frame.url()}`);
     });
@@ -61,7 +61,7 @@ class RecaptchaBoxV2 {
     const framePairs = this._getRecaptchaFramePairs(frames);
     
     if (framePairs.length === 0) {
-      console.log('⚠️  未找到标准框架对，尝试备用检测...');
+      console.log('[WARN]  未找到标准框架对，尝试备用检测...');
       
       // 备用检测：查找任何包含 recaptcha 的框架
       const recaptchaFrames = frames.filter(frame => 
@@ -69,7 +69,7 @@ class RecaptchaBoxV2 {
       );
       
       if (recaptchaFrames.length >= 2) {
-        console.log(`📋 找到 ${recaptchaFrames.length} 个 reCAPTCHA 框架，尝试配对...`);
+        console.log(`[LIST] 找到 ${recaptchaFrames.length} 个 reCAPTCHA 框架，尝试配对...`);
         
         // 简单配对：第一个作为 anchor，第二个作为 challenge
         this.anchorFrame = recaptchaFrames[0];
@@ -90,7 +90,7 @@ class RecaptchaBoxV2 {
     
     this.isInitialized = true;
     
-    console.log('✅ reCAPTCHA v2 frames 初始化成功');
+    console.log('[OK] reCAPTCHA v2 frames 初始化成功');
     console.log(`   Anchor frame: ${this.anchorFrame.url()}`);
     console.log(`   Challenge frame: ${this.bframeFrame.url()}`);
     
@@ -109,7 +109,7 @@ class RecaptchaBoxV2 {
       /\/recaptcha\/(api2|enterprise)\/bframe/.test(frame.url())
     );
     
-    console.log(`🔍 找到 ${anchorFrames.length} 个 anchor frames, ${bframeFrames.length} 个 bframe frames`);
+    console.log(`[DEBUG] 找到 ${anchorFrames.length} 个 anchor frames, ${bframeFrames.length} 个 bframe frames`);
     
     const framePairs = [];
     
@@ -119,7 +119,7 @@ class RecaptchaBoxV2 {
       for (const bframeFrame of bframeFrames) {
         if (bframeFrame.name().includes(frameId)) {
           framePairs.push([anchorFrame, bframeFrame]);
-          console.log(`✅ 找到匹配的 frame pair，ID: ${frameId}`);
+          console.log(`[OK] 找到匹配的 frame pair，ID: ${frameId}`);
         }
       }
     }
@@ -151,12 +151,12 @@ class RecaptchaBoxV2 {
       const isChecked = await checkbox.getAttribute('aria-checked');
       
       if (isChecked === 'true') {
-        console.log('✅ 复选框已经选中');
+        console.log('[OK] 复选框已经选中');
         return true;
       }
       
       await this.anchorFrame.click(SELECTORS.checkbox);
-      console.log('✅ 复选框点击完成');
+      console.log('[OK] 复选框点击完成');
       
       // 等待一段时间让挑战加载
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -204,7 +204,7 @@ class RecaptchaBoxV2 {
         this.bframeFrame.waitForSelector('.rc-imageselect-instructions', { timeout })
       ]);
       
-      console.log('✅ 检测到挑战界面');
+      console.log('[OK] 检测到挑战界面');
       return true;
     } catch (error) {
       console.log('ℹ️  没有检测到挑战 - 可能已自动通过验证');
@@ -262,7 +262,7 @@ class RecaptchaBoxV2 {
       // 等待音频挑战界面加载
       await this.bframeFrame.waitForSelector('.rc-audiochallenge-instructions', { timeout: 10000 });
       
-      console.log('✅ 已切换到音频挑战');
+      console.log('[OK] 已切换到音频挑战');
       await new Promise(resolve => setTimeout(resolve, 2000));
       
     } catch (error) {
@@ -278,7 +278,7 @@ class RecaptchaBoxV2 {
     this._ensureInitialized();
     
     try {
-      console.log('🔍 获取音频下载链接...');
+      console.log('[DEBUG] 获取音频下载链接...');
       
       // 等待音频下载按钮出现
       await this.bframeFrame.waitForSelector(SELECTORS.audio_source, { timeout: 15000 });
@@ -293,7 +293,7 @@ class RecaptchaBoxV2 {
         throw new Error('Audio download href is empty');
       }
       
-      console.log(`✅ 音频链接获取成功: ${href.substring(0, 100)}...`);
+      console.log(`[OK] 音频链接获取成功: ${href.substring(0, 100)}...`);
       return href;
     } catch (error) {
       console.error('获取音频链接失败:', error);
@@ -318,7 +318,7 @@ class RecaptchaBoxV2 {
       await this.bframeFrame.waitForSelector(SELECTORS.verify_button, { timeout: 5000 });
       await this.bframeFrame.click(SELECTORS.verify_button);
       
-      console.log('✅ 音频响应已提交，等待验证...');
+      console.log('[OK] 音频响应已提交，等待验证...');
       
       // 等待验证完成
       await this.page.waitForTimeout(3000);
@@ -383,7 +383,7 @@ class RecaptchaBoxV2 {
       for (const index of indices) {
         if (index >= 0 && index < tiles.length) {
           await tiles[index].click();
-          console.log(`✅ 已点击瓦片 ${index}`);
+          console.log(`[OK] 已点击瓦片 ${index}`);
           await new Promise(resolve => setTimeout(resolve, 500)); // 点击间隔
         }
       }
@@ -405,7 +405,7 @@ class RecaptchaBoxV2 {
       await this.bframeFrame.waitForSelector(SELECTORS.verify_button, { timeout: 5000 });
       await this.bframeFrame.click(SELECTORS.verify_button);
       
-      console.log('✅ 图像挑战已提交，等待验证...');
+      console.log('[OK] 图像挑战已提交，等待验证...');
       
       // 等待验证完成
       await this.page.waitForTimeout(3000);
@@ -476,7 +476,7 @@ class RecaptchaBoxV2 {
         try {
           const token = await method();
           if (token && token.length > 100) { // 有效的 reCAPTCHA tokens 通常很长
-            console.log(`✅ 成功获取 reCAPTCHA token (长度: ${token.length})`);
+            console.log(`[OK] 成功获取 reCAPTCHA token (长度: ${token.length})`);
             return token;
           }
         } catch (e) {

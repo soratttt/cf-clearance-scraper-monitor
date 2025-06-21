@@ -40,7 +40,7 @@ async function createBrowser(options = {}) {
                     const usage = this.contextUsage.get(context) || 0;
                     this.contextUsage.set(context, usage + 1);
                     
-                    console.log(`🔄 Reusing context (usage: ${usage + 1}, ${this.used} active, ${this.available.length} available)`);
+                    console.log(`[RESTART] Reusing context (usage: ${usage + 1}, ${this.used} active, ${this.available.length} available)`);
                     return context;
                 }
                 
@@ -98,7 +98,7 @@ async function createBrowser(options = {}) {
                                 await blankPage.deleteCookie(...cookies);
                             }
                             await blankPage.close();
-                            console.log(`🧹 Cleared ${cookies.length} cookies for waiting request`);
+                            console.log(`[CLEANUP] Cleared ${cookies.length} cookies for waiting request`);
                         } catch (cookieError) {
                             console.error("Error clearing cookies for waiting request:", cookieError.message);
                         }
@@ -110,7 +110,7 @@ async function createBrowser(options = {}) {
                         const usage = this.contextUsage.get(context) || 0;
                         this.contextUsage.set(context, usage + 1);
                         
-                        console.log(`🚀 Context passed to waiting request (${this.used} active, ${this.waitingQueue.length} waiting)`);
+                        console.log(`[START] Context passed to waiting request (${this.used} active, ${this.waitingQueue.length} waiting)`);
                         waitingRequest.resolve(context);
                         return;
                     } catch (e) {
@@ -130,7 +130,7 @@ async function createBrowser(options = {}) {
                     try {
                         this.contextUsage.delete(context);
                         await context.close();
-                        console.log(`🔄 Context recycled due to high usage (${usage} uses)`);
+                        console.log(`[RESTART] Context recycled due to high usage (${usage} uses)`);
                         
                         // 创建新的上下文补充池子
                         if (this.available.length < Math.floor(this.maxSize / 2)) {
@@ -162,7 +162,7 @@ async function createBrowser(options = {}) {
                             await blankPage.deleteCookie(...cookies);
                         }
                         await blankPage.close();
-                        console.log(`🧹 Cleared ${cookies.length} cookies from context`);
+                        console.log(`[CLEANUP] Cleared ${cookies.length} cookies from context`);
                     } catch (cookieError) {
                         console.error("Error clearing cookies:", cookieError.message);
                     }
@@ -193,7 +193,7 @@ async function createBrowser(options = {}) {
                     }
                 }
                 this.used = 0;
-                console.log('🧹 Context pool cleaned up');
+                console.log('[CLEANUP] Context pool cleaned up');
             }
         }
 

@@ -130,8 +130,8 @@ app.post('/', async (req, res) => {
 // 处理 reCAPTCHA v2 求解 (使用 Python 实现)
 async function handleRecaptchaV2Solve(data) {
     try {
-        console.log('🐍 使用 Python reCAPTCHA v2 解决器...');
-        console.log('💡 Python 脚本将独立处理浏览器操作，不会创建重复页面');
+        console.log('[PYTHON] 使用 Python reCAPTCHA v2 解决器...');
+        console.log('[INFO] Python 脚本将独立处理浏览器操作，不会创建重复页面');
         
         // 创建 Python reCAPTCHA v2 解决器
         const solver = new PythonRecaptchaSolver();
@@ -139,12 +139,12 @@ async function handleRecaptchaV2Solve(data) {
         // 环境验证
         const envCheck = await solver.validateEnvironment();
         if (!envCheck.valid) {
-            console.warn('⚠️  Python 环境检查警告:', envCheck.issues);
+            console.warn('[WARN] Python 环境检查警告:', envCheck.issues);
             // 尝试自动安装依赖
             try {
                 await solver.installDependencies();
             } catch (installError) {
-                console.error('❌ 自动安装 Python 依赖失败:', installError.message);
+                console.error('[ERROR] 自动安装 Python 依赖失败:', installError.message);
             }
         }
         
@@ -157,11 +157,11 @@ async function handleRecaptchaV2Solve(data) {
             timeout: 180000
         });
         
-        console.log('✅ Python reCAPTCHA v2 解决成功');
+        console.log('[OK] Python reCAPTCHA v2 解决成功');
         return { token: result.token, code: 200, challengeType: result.challengeType, solveTime: result.solveTime };
         
     } catch (error) {
-        console.error('❌ Python reCAPTCHA v2 解决失败:', error.message);
+        console.error('[ERROR] Python reCAPTCHA v2 解决失败:', error.message);
         throw error;
     }
 }
@@ -171,13 +171,13 @@ async function handleRecaptchaV2Solve(data) {
 async function handleRecaptchaV3Solve(data) {
     let context = null;
     try {
-        console.log('🚀 获取 reCAPTCHA v3 浏览器上下文...');
+        console.log('[INIT] 获取 reCAPTCHA v3 浏览器上下文...');
         context = await global.contextPool.getContext();
         const page = await context.newPage();
         
         // 设置代理（如果提供）
         if (data.proxy) {
-            console.log(`🌐 使用代理: ${data.proxy}`);
+            console.log(`[PROXY] 使用代理: ${data.proxy}`);
         }
         
         // 创建 reCAPTCHA v3 解决器并在导航前初始化
@@ -194,11 +194,11 @@ async function handleRecaptchaV3Solve(data) {
             timeout: 30000
         });
         
-        console.log('✅ reCAPTCHA v3 解决成功');
+        console.log('[OK] reCAPTCHA v3 解决成功');
         return { token: result.token, code: 200, score: result.score, solveTime: result.solveTime };
         
     } catch (error) {
-        console.error('❌ reCAPTCHA v3 解决失败:', error.message);
+        console.error('[ERROR] reCAPTCHA v3 解决失败:', error.message);
         throw error;
     } finally {
         if (context) {
@@ -500,7 +500,7 @@ async function handleClearanceRequest(req, res, data) {
     // 检查内存使用情况
     const memStats = memoryManager.checkMemoryUsage()
     if (memStats.heapUsagePercent > 0.8) {
-        console.log('⚠️  High memory usage after request completion')
+        console.log('[WARN] High memory usage after request completion')
     }
 
     res.status(result.code ?? 500).send(result)
@@ -595,7 +595,7 @@ app.post('/api/monitor/reset', (_, res) => {
 // 服务重启端点
 app.post('/api/service/restart', async (_, res) => {
     try {
-        console.log('🔄 开始重启服务...')
+        console.log('[RESTART] 开始重启服务...')
         
         // 清理浏览器实例和上下文
         await cleanupBrowserInstances()
@@ -627,7 +627,7 @@ app.post('/api/service/restart', async (_, res) => {
         // 重新初始化浏览器（延迟执行避免阻塞响应）
         setTimeout(async () => {
             try {
-                console.log('🔄 等待系统稳定后重新初始化...')
+                console.log('[RESTART] 等待系统稳定后重新初始化...')
                 
                 // 等待更长时间确保所有清理完成
                 await new Promise(resolve => setTimeout(resolve, 3000))
@@ -636,12 +636,12 @@ app.post('/api/service/restart', async (_, res) => {
                 global.restarting = false
                 
                 if (process.env.SKIP_LAUNCH != 'true') {
-                    console.log('🚀 开始重新初始化浏览器...')
+                    console.log('[RESTART] 开始重新初始化浏览器...')
                     await require('../captcha-solvers/turnstile/module/createBrowser')()
                 }
-                console.log('✅ 服务重启完成')
+                console.log('[OK] 服务重启完成')
             } catch (error) {
-                console.error('❌ 重新初始化浏览器失败:', error.message)
+                console.error('[ERROR] 重新初始化浏览器失败:', error.message)
                 // 确保即使失败也重置标志
                 global.restarting = false
             }
@@ -654,7 +654,7 @@ app.post('/api/service/restart', async (_, res) => {
         })
         
     } catch (error) {
-        console.error('❌ 服务重启失败:', error.message)
+        console.error('[ERROR] 服务重启失败:', error.message)
         res.status(500).json({ 
             message: 'Service restart failed: ' + error.message 
         })
@@ -664,7 +664,7 @@ app.post('/api/service/restart', async (_, res) => {
 // 清理浏览器实例的函数
 async function cleanupBrowserInstances() {
     try {
-        console.log('🧹 清理浏览器实例和上下文...')
+        console.log('[CLEANUP] 清理浏览器实例和上下文...')
         
         // 设置标志阻止自动重连
         global.restarting = true
@@ -698,17 +698,17 @@ async function cleanupBrowserInstances() {
             }
         }
         
-        console.log('✅ 浏览器实例清理完成')
+        console.log('[OK] 浏览器实例清理完成')
         
     } catch (error) {
-        console.error('❌ 清理浏览器实例失败:', error.message)
+        console.error('[ERROR] 清理浏览器实例失败:', error.message)
         throw error
     }
 }
 
 // 启动自动重启检查
 function startAutoRestartCheck() {
-    console.log('🔄 启动自动重启检查 (6小时无请求后重启)')
+    console.log('[AUTO-RESTART] 启动自动重启检查 (6小时无请求后重启)')
     
     global.autoRestartTimer = setInterval(async () => {
         try {
@@ -724,31 +724,31 @@ function startAutoRestartCheck() {
             
             // 如果有活跃请求，跳过重启检查
             if (hasActiveRequests) {
-                console.log('⏭️  跳过自动重启检查: 有活跃请求')
+                console.log('[AUTO-RESTART] 跳过自动重启检查: 有活跃请求')
                 return
             }
             
             // 检查是否超过空闲时间阈值
             if (timeSinceLastRequest >= global.autoRestartConfig.idleTimeThreshold) {
-                console.log(`🔄 检测到服务空闲超过 ${global.autoRestartConfig.idleTimeThreshold / (60 * 60 * 1000)} 小时，开始自动重启...`)
-                console.log(`📊 最后请求时间: ${global.monitoringData.lastRequestTime.toLocaleString('zh-CN')}`)
-                console.log(`📊 当前时间: ${now.toLocaleString('zh-CN')}`)
-                console.log(`📊 空闲时间: ${Math.round(timeSinceLastRequest / (60 * 60 * 1000) * 10) / 10} 小时`)
+                console.log(`[AUTO-RESTART] 检测到服务空闲超过 ${global.autoRestartConfig.idleTimeThreshold / (60 * 60 * 1000)} 小时，开始自动重启...`)
+                console.log(`[INFO] 最后请求时间: ${global.monitoringData.lastRequestTime.toLocaleString('zh-CN')}`)
+                console.log(`[INFO] 当前时间: ${now.toLocaleString('zh-CN')}`)
+                console.log(`[INFO] 空闲时间: ${Math.round(timeSinceLastRequest / (60 * 60 * 1000) * 10) / 10} 小时`)
                 
                 // 执行自动重启
                 await performAutoRestart()
                 
             } else {
                 const hoursUntilRestart = Math.round((global.autoRestartConfig.idleTimeThreshold - timeSinceLastRequest) / (60 * 60 * 1000) * 10) / 10
-                console.log(`✅ 自动重启检查: 服务正常，距离自动重启还有 ${hoursUntilRestart} 小时`)
+                console.log(`[OK] 自动重启检查: 服务正常，距离自动重启还有 ${hoursUntilRestart} 小时`)
             }
             
         } catch (error) {
-            console.error('❌ 自动重启检查失败:', error.message)
+            console.error('[ERROR] 自动重启检查失败:', error.message)
         }
     }, global.autoRestartConfig.checkInterval)
     
-    console.log(`⏰ 自动重启检查已启动，每 ${global.autoRestartConfig.checkInterval / (60 * 1000)} 分钟检查一次`)
+    console.log(`[AUTO-RESTART] 自动重启检查已启动，每 ${global.autoRestartConfig.checkInterval / (60 * 1000)} 分钟检查一次`)
 }
 
 // 执行自动重启
@@ -786,7 +786,7 @@ async function performAutoRestart() {
         // 重新初始化浏览器
         setTimeout(async () => {
             try {
-                console.log('🔄 自动重启等待系统稳定后重新初始化...')
+                console.log('[AUTO-RESTART] 自动重启等待系统稳定后重新初始化...')
                 
                 // 等待更长时间确保所有清理完成
                 await new Promise(resolve => setTimeout(resolve, 3000))
@@ -795,19 +795,19 @@ async function performAutoRestart() {
                 global.restarting = false
                 
                 if (process.env.SKIP_LAUNCH != 'true') {
-                    console.log('🚀 自动重启开始重新初始化浏览器...')
+                    console.log('[AUTO-RESTART] 自动重启开始重新初始化浏览器...')
                     await require('../captcha-solvers/turnstile/module/createBrowser')()
                 }
-                console.log('✅ 自动重启完成')
+                console.log('[OK] 自动重启完成')
             } catch (error) {
-                console.error('❌ 自动重启重新初始化浏览器失败:', error.message)
+                console.error('[ERROR] 自动重启重新初始化浏览器失败:', error.message)
                 // 确保即使失败也重置标志
                 global.restarting = false
             }
         }, 1000)
         
     } catch (error) {
-        console.error('❌ 自动重启失败:', error.message)
+        console.error('[ERROR] 自动重启失败:', error.message)
     }
 }
 

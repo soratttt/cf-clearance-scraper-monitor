@@ -239,7 +239,7 @@ function checkPerformance() {
         
         // 警告检查
         if (data.requests.successRate < 90) {
-            console.warn('⚠️ 成功率过低！');
+            console.warn('[WARN] 成功率过低！');
         }
     });
 }

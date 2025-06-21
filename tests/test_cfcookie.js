@@ -42,8 +42,8 @@ function getCfCookie(testData = {}) {
             }
         };
 
-        console.log(`📤 发送请求到: http://${options.hostname}:${options.port}${options.path}`);
-        console.log(`📤 请求数据:`, JSON.stringify(requestData, null, 2));
+        console.log(`[REQUEST] 发送请求到: http://${options.hostname}:${options.port}${options.path}`);
+        console.log(`[REQUEST] 请求数据:`, JSON.stringify(requestData, null, 2));
 
         const req = http.request(options, (res) => {
             let responseData = '';
@@ -130,22 +130,22 @@ function validateResponse(response) {
     
     // 检查状态码
     if (response.statusCode === 200) {
-        validations.push({ check: 'HTTP Status', result: '✅ PASS', detail: `200 OK` });
+        validations.push({ check: 'HTTP Status', result: '[OK] PASS', detail: `200 OK` });
     } else {
-        validations.push({ check: 'HTTP Status', result: '❌ FAIL', detail: `${response.statusCode}` });
+        validations.push({ check: 'HTTP Status', result: '[FAIL] FAIL', detail: `${response.statusCode}` });
     }
     
     // 检查响应体
     if (response.body && typeof response.body === 'object') {
-        validations.push({ check: 'Response Format', result: '✅ PASS', detail: 'Valid JSON' });
+        validations.push({ check: 'Response Format', result: '[OK] PASS', detail: 'Valid JSON' });
         
         // 检查必需字段
         const requiredFields = ['code'];
         requiredFields.forEach(field => {
             if (response.body.hasOwnProperty(field)) {
-                validations.push({ check: `Field: ${field}`, result: '✅ PASS', detail: `Present` });
+                validations.push({ check: `Field: ${field}`, result: '[OK] PASS', detail: `Present` });
             } else {
-                validations.push({ check: `Field: ${field}`, result: '❌ FAIL', detail: `Missing` });
+                validations.push({ check: `Field: ${field}`, result: '[FAIL] FAIL', detail: `Missing` });
             }
         });
         
@@ -154,19 +154,19 @@ function validateResponse(response) {
             if (response.body.cf_clearance) {
                 validations.push({ 
                     check: 'cf_clearance Field', 
-                    result: '✅ PASS', 
+                    result: '[OK] PASS', 
                     detail: `Length: ${response.body.cf_clearance.length}` 
                 });
             } else {
                 validations.push({ 
                     check: 'cf_clearance Field', 
-                    result: '❌ FAIL', 
+                    result: '[FAIL] FAIL', 
                     detail: 'Missing cf_clearance in success response' 
                 });
             }
         }
     } else {
-        validations.push({ check: 'Response Format', result: '❌ FAIL', detail: 'Invalid JSON' });
+        validations.push({ check: 'Response Format', result: '[FAIL] FAIL', detail: 'Invalid JSON' });
     }
     
     return validations;
@@ -245,28 +245,28 @@ async function testCookieUsage(cfClearance) {
 async function runTests() {
     console.log('🍪 CF Cookie 功能测试');
     console.log('='.repeat(60));
-    console.log(`🌐 测试网站: ${TEST_CONFIG.cfcookie.websiteUrl}`);
-    console.log(`🖥️  服务地址: http://${TEST_CONFIG.server.host}:${TEST_CONFIG.server.port}`);
+    console.log(`[NETWORK] 测试网站: ${TEST_CONFIG.cfcookie.websiteUrl}`);
+    console.log(`[SERVER]  服务地址: http://${TEST_CONFIG.server.host}:${TEST_CONFIG.server.port}`);
     console.log('='.repeat(60));
     console.log();
 
     // 1. 检查服务状态
-    console.log('📡 检查服务状态...');
+    console.log('[STATUS] 检查服务状态...');
     const serverStatus = await checkServerStatus();
     
     if (!serverStatus.status) {
-        console.log('❌ 服务未运行或无法连接');
+        console.log('[FAIL] 服务未运行或无法连接');
         console.log(`   错误: ${serverStatus.error || 'Unknown'}`);
         console.log('   请确保服务已启动: npm start');
         process.exit(1);
     }
     
-    console.log('✅ 服务运行正常');
+    console.log('[OK] 服务运行正常');
     console.log();
 
     // 2. 基本功能测试
-    console.log('🎯 开始 cf_clearance cookie 获取测试...');
-    console.log('⏱️  预计耗时: 30-120 秒');
+    console.log('[TARGET] 开始 cf_clearance cookie 获取测试...');
+    console.log('[TIMER]  预计耗时: 30-120 秒');
     console.log();
     
     const startTime = Date.now();
@@ -276,15 +276,15 @@ async function runTests() {
         const endTime = Date.now();
         const duration = endTime - startTime;
         
-        console.log('📥 收到响应:');
+        console.log('[RESPONSE] 收到响应:');
         console.log('─'.repeat(40));
-        console.log(`⏱️  耗时: ${formatDuration(duration)}`);
-        console.log(`📊 状态码: ${response.statusCode}`);
-        console.log(`📋 响应体:`, JSON.stringify(response.body, null, 2));
+        console.log(`[TIMER]  耗时: ${formatDuration(duration)}`);
+        console.log(`[STATS] 状态码: ${response.statusCode}`);
+        console.log(`[LIST] 响应体:`, JSON.stringify(response.body, null, 2));
         console.log();
         
         // 3. 验证响应
-        console.log('🔍 响应验证:');
+        console.log('[DEBUG] 响应验证:');
         console.log('─'.repeat(40));
         const validations = validateResponse(response);
         
@@ -295,62 +295,62 @@ async function runTests() {
         
         // 4. 测试 cookie 使用
         if (response.body && response.body.code === 200 && response.body.cf_clearance) {
-            console.log('🧪 测试 cookie 实际使用效果...');
+            console.log('[TEST] 测试 cookie 实际使用效果...');
             const cookieTest = await testCookieUsage(response.body.cf_clearance);
             
             console.log('─'.repeat(40));
             if (cookieTest.success) {
-                console.log('✅ Cookie 测试成功 - 可以正常访问目标网站');
-                console.log(`📊 响应状态: ${cookieTest.statusCode}`);
-                console.log(`📄 内容长度: ${cookieTest.contentLength} bytes`);
+                console.log('[OK] Cookie 测试成功 - 可以正常访问目标网站');
+                console.log(`[STATS] 响应状态: ${cookieTest.statusCode}`);
+                console.log(`[FILE] 内容长度: ${cookieTest.contentLength} bytes`);
             } else {
-                console.log('❌ Cookie 测试失败');
+                console.log('[FAIL] Cookie 测试失败');
                 if (cookieTest.hasCloudflareChallenge) {
                     console.log('🔒 仍然遇到 Cloudflare 验证页面');
                 } else if (cookieTest.error) {
-                    console.log(`❌ 错误: ${cookieTest.error}`);
+                    console.log(`[FAIL] 错误: ${cookieTest.error}`);
                 } else {
-                    console.log(`📊 响应状态: ${cookieTest.statusCode}`);
+                    console.log(`[STATS] 响应状态: ${cookieTest.statusCode}`);
                 }
             }
             console.log();
         }
         
         // 5. 结果总结
-        const passedValidations = validations.filter(v => v.result.includes('✅')).length;
+        const passedValidations = validations.filter(v => v.result.includes('[OK]')).length;
         const totalValidations = validations.length;
         
-        console.log('📈 测试总结:');
+        console.log('[INFO] 测试总结:');
         console.log('─'.repeat(40));
-        console.log(`✅ 通过验证: ${passedValidations}/${totalValidations}`);
-        console.log(`⏱️  总耗时: ${formatDuration(duration)}`);
+        console.log(`[OK] 通过验证: ${passedValidations}/${totalValidations}`);
+        console.log(`[TIMER]  总耗时: ${formatDuration(duration)}`);
         
         if (response.body && response.body.code === 200 && response.body.cf_clearance) {
-            console.log('🎉 cf_clearance cookie 获取成功!');
+            console.log('[SUCCESS] cf_clearance cookie 获取成功!');
             console.log(`🍪 Cookie: ${response.body.cf_clearance.substring(0, 50)}...`);
         } else if (response.body && response.body.code !== 200) {
-            console.log('⚠️  cf_clearance cookie 获取失败');
-            console.log(`❌ 错误: ${response.body.message || 'Unknown error'}`);
+            console.log('[WARN]  cf_clearance cookie 获取失败');
+            console.log(`[FAIL] 错误: ${response.body.message || 'Unknown error'}`);
         } else {
-            console.log('❓ 响应格式异常');
+            console.log('[UNKNOWN] 响应格式异常');
         }
         
     } catch (error) {
         const endTime = Date.now();
         const duration = endTime - startTime;
         
-        console.log('💥 测试失败:');
+        console.log('[ERROR] 测试失败:');
         console.log('─'.repeat(40));
-        console.log(`⏱️  耗时: ${formatDuration(duration)}`);
-        console.log(`❌ 错误: ${error.message}`);
+        console.log(`[TIMER]  耗时: ${formatDuration(duration)}`);
+        console.log(`[FAIL] 错误: ${error.message}`);
         
         if (error.message.includes('timeout')) {
-            console.log('⏰ 可能原因:');
+            console.log('[TIME] 可能原因:');
             console.log('   - Cloudflare 验证过于复杂');
             console.log('   - 网络连接不稳定');
             console.log('   - 目标网站响应缓慢');
         } else if (error.message.includes('ECONNREFUSED')) {
-            console.log('🔌 可能原因:');
+            console.log('[CONNECT] 可能原因:');
             console.log('   - 服务未启动');
             console.log('   - 端口号错误');
         }
@@ -365,19 +365,19 @@ async function main() {
     try {
         await runTests();
     } catch (error) {
-        console.error('💥 发生错误:', error.message);
+        console.error('[ERROR] 发生错误:', error.message);
         process.exit(1);
     }
 }
 
 // 错误处理
 process.on('uncaughtException', (error) => {
-    console.error('💥 未捕获的异常:', error.message);
+    console.error('[ERROR] 未捕获的异常:', error.message);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 未处理的 Promise 拒绝:', reason);
+    console.error('[ERROR] 未处理的 Promise 拒绝:', reason);
     process.exit(1);
 });
 

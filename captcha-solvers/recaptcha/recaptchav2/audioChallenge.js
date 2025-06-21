@@ -31,7 +31,7 @@ class AudioChallenge {
 
     while (attempts < this.maxAttempts && !solved) {
       attempts++;
-      console.log(`🎯 音频挑战尝试 ${attempts}/${this.maxAttempts}`);
+      console.log(`[TARGET] 音频挑战尝试 ${attempts}/${this.maxAttempts}`);
 
       try {
         // 1. 切换到音频挑战
@@ -58,22 +58,22 @@ class AudioChallenge {
 
         // 6. 检查是否解决
         if (await recaptchaBox.isSolved()) {
-          console.log('✅ 音频挑战解决成功！');
+          console.log('[OK] 音频挑战解决成功！');
           solved = true;
         } else if (await recaptchaBox.hasError()) {
-          console.log(`❌ 尝试 ${attempts} 失败，检测到错误`);
+          console.log(`[FAIL] 尝试 ${attempts} 失败，检测到错误`);
           if (attempts < this.maxAttempts) {
             await this._prepareRetry(recaptchaBox);
           }
         } else {
-          console.log(`❌ 尝试 ${attempts} 失败，验证未通过`);
+          console.log(`[FAIL] 尝试 ${attempts} 失败，验证未通过`);
           if (attempts < this.maxAttempts) {
             await this._prepareRetry(recaptchaBox);
           }
         }
 
       } catch (error) {
-        console.error(`❌ 音频挑战尝试 ${attempts} 失败:`, error.message);
+        console.error(`[FAIL] 音频挑战尝试 ${attempts} 失败:`, error.message);
         
         if (attempts >= this.maxAttempts) {
           throw error;
@@ -113,7 +113,7 @@ class AudioChallenge {
           if (this._isValidTranscription(transcription)) {
             return transcription;
           } else {
-            console.log(`⚠️  转录结果可能不准确: "${transcription}"`);
+            console.log(`[WARN]  转录结果可能不准确: "${transcription}"`);
             if (attempt === maxTranscriptionAttempts) {
               return transcription; // 最后一次尝试，返回无论如何
             }
@@ -153,7 +153,7 @@ class AudioChallenge {
         throw new AudioTranscriptionError('Empty transcription result');
       }
 
-      console.log(`✅ 音频处理完成，转录结果: "${transcription}"`);
+      console.log(`[OK] 音频处理完成，转录结果: "${transcription}"`);
       return transcription;
 
     } catch (error) {
@@ -186,7 +186,7 @@ class AudioChallenge {
       }
     }
     
-    console.log('⏰ 验证等待超时');
+    console.log('[TIME] 验证等待超时');
     return false;
   }
 
@@ -230,14 +230,14 @@ class AudioChallenge {
    * 准备重试
    */
   async _prepareRetry(recaptchaBox) {
-    console.log('🔄 准备下一次尝试...');
+    console.log('[RESTART] 准备下一次尝试...');
     
     try {
       // 查找重新加载按钮并点击
       const reloadButton = await recaptchaBox.bframeFrame.$('#recaptcha-reload-button');
       if (reloadButton) {
         await reloadButton.click();
-        console.log('🔄 已点击重新加载按钮');
+        console.log('[RESTART] 已点击重新加载按钮');
         await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
         // 如果没有重新加载按钮，等待一下

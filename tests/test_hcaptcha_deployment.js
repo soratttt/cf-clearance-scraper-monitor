@@ -28,7 +28,7 @@ for (let i = 0; i < args.length; i++) {
         i++;
     } else if (args[i] === '--help' || args[i] === '-h') {
         console.log(`
-🧪 hCaptcha 部署测试脚本
+[TEST] hCaptcha 部署测试脚本
 
 使用方法:
   node test_hcaptcha_deployment.js [选项]
@@ -76,12 +76,12 @@ function recordTest(name, passed, message = '', details = '') {
     testResults.total++;
     if (passed) {
         testResults.passed++;
-        colorLog('green', `✅ ${name}: ${message}`);
+        colorLog('green', `[OK] ${name}: ${message}`);
     } else {
         testResults.failed++;
-        colorLog('red', `❌ ${name}: ${message}`);
+        colorLog('red', `[FAIL] ${name}: ${message}`);
         if (details) {
-            colorLog('yellow', `   💡 ${details}`);
+            colorLog('yellow', `   [INFO] ${details}`);
         }
     }
     testResults.tests.push({ name, passed, message, details });
@@ -93,7 +93,7 @@ async function sleep(ms) {
 
 // 1. 检查环境配置
 function checkEnvironment() {
-    colorLog('blue', '\n🔍 [1/6] 检查环境配置...');
+    colorLog('blue', '\n[DEBUG] [1/6] 检查环境配置...');
     
     // 检查 .env 文件
     const envPath = path.join(__dirname, '..', '.env');
@@ -129,7 +129,7 @@ function checkEnvironment() {
 
 // 2. 检查 Node.js 依赖
 function checkNodeDependencies() {
-    colorLog('blue', '\n📦 [2/6] 检查 Node.js 依赖...');
+    colorLog('blue', '\n[PACKAGE] [2/6] 检查 Node.js 依赖...');
     
     // 检查 package.json
     const packagePath = path.join(__dirname, '..', 'package.json');
@@ -164,7 +164,7 @@ function checkNodeDependencies() {
 // 3. 检查 Python 环境
 function checkPythonEnvironment() {
     return new Promise((resolve) => {
-        colorLog('blue', '\n🐍 [3/6] 检查 Python 环境...');
+        colorLog('blue', '\n[PYTHON] [3/6] 检查 Python 环境...');
         
         const hcaptchaDir = path.join(__dirname, '..', 'captcha-solvers', 'hcaptcha');
         const venvPath = path.join(hcaptchaDir, 'venv');
@@ -289,7 +289,7 @@ print(json.dumps(result))
 // 4. 检查服务状态
 function checkServiceStatus() {
     return new Promise((resolve) => {
-        colorLog('blue', '\n🌐 [4/6] 检查服务状态...');
+        colorLog('blue', '\n[NETWORK] [4/6] 检查服务状态...');
         
         const req = http.request({
             hostname: host,
@@ -333,7 +333,7 @@ function checkServiceStatus() {
 // 5. 测试基础 API
 function testBasicAPI() {
     return new Promise((resolve) => {
-        colorLog('blue', '\n🔌 [5/6] 测试基础 API...');
+        colorLog('blue', '\n[CONNECT] [5/6] 测试基础 API...');
         
         // 测试根路径
         const testData = JSON.stringify({
@@ -394,8 +394,8 @@ function testBasicAPI() {
 // 6. 测试 hCaptcha 解决器
 function testHcaptchaSolver() {
     return new Promise((resolve) => {
-        colorLog('blue', '\n🎯 [6/6] 测试 hCaptcha 解决器...');
-        colorLog('yellow', '⏱️  这可能需要 30-120 秒...');
+        colorLog('blue', '\n[TARGET] [6/6] 测试 hCaptcha 解决器...');
+        colorLog('yellow', '[TIMER]  这可能需要 30-120 秒...');
         
         const testData = JSON.stringify({
             type: 'hcaptcha',
@@ -431,7 +431,7 @@ function testHcaptchaSolver() {
                     if (res.statusCode === 200 && response.code === 200 && response.token) {
                         recordTest('hCaptcha 解决器', true, `成功解决验证码 (${duration}秒)`);
                         recordTest('Token 生成', true, `Token: ${response.token.substring(0, 50)}...`);
-                        colorLog('green', `🎉 hCaptcha 部署测试完全成功！`);
+                        colorLog('green', `[SUCCESS] hCaptcha 部署测试完全成功！`);
                         resolve(true);
                     } else if (res.statusCode === 500) {
                         recordTest('hCaptcha 解决器', false, 
@@ -469,19 +469,19 @@ function testHcaptchaSolver() {
 
 // 显示测试总结
 function showSummary() {
-    colorLog('blue', '\n📊 测试总结');
+    colorLog('blue', '\n[STATS] 测试总结');
     colorLog('blue', '='.repeat(50));
     
     if (testResults.failed === 0) {
-        colorLog('green', `🎉 所有测试通过! (${testResults.passed}/${testResults.total})`);
-        colorLog('green', '✅ hCaptcha 解决器部署成功，可以正常使用！');
+        colorLog('green', `[SUCCESS] 所有测试通过! (${testResults.passed}/${testResults.total})`);
+        colorLog('green', '[OK] hCaptcha 解决器部署成功，可以正常使用！');
     } else {
-        colorLog('red', `❌ 测试失败: ${testResults.failed}/${testResults.total}`);
-        colorLog('yellow', `✅ 通过: ${testResults.passed}/${testResults.total}`);
-        colorLog('red', '\n🔧 请根据上述错误信息修复问题后重新测试');
+        colorLog('red', `[FAIL] 测试失败: ${testResults.failed}/${testResults.total}`);
+        colorLog('yellow', `[OK] 通过: ${testResults.passed}/${testResults.total}`);
+        colorLog('red', '\n[CONFIG] 请根据上述错误信息修复问题后重新测试');
     }
     
-    colorLog('blue', '\n💡 提示:');
+    colorLog('blue', '\n[INFO] 提示:');
     colorLog('white', '  • 如果 API 密钥相关测试失败，请检查 .env 文件中的 GEMINI_API_KEY 配置');
     colorLog('white', '  • 如果 Python 环境测试失败，请运行一键部署脚本重新安装');
     colorLog('white', '  • 如果服务无法访问，请确保服务已启动并检查防火墙设置');
@@ -492,43 +492,43 @@ function showSummary() {
 
 // 主测试流程
 async function runTests() {
-    colorLog('cyan', '🧪 hCaptcha 部署测试开始');
-    colorLog('cyan', `🌐 测试目标: ${baseUrl}`);
+    colorLog('cyan', '[TEST] hCaptcha 部署测试开始');
+    colorLog('cyan', `[NETWORK] 测试目标: ${baseUrl}`);
     colorLog('cyan', '='.repeat(50));
     
     try {
         // 按顺序执行测试
         const envOk = checkEnvironment();
         if (!envOk) {
-            colorLog('red', '\n❌ 环境配置检查失败，跳过后续测试');
+            colorLog('red', '\n[FAIL] 环境配置检查失败，跳过后续测试');
             showSummary();
             return;
         }
         
         const nodeOk = checkNodeDependencies();
         if (!nodeOk) {
-            colorLog('red', '\n❌ Node.js 依赖检查失败，跳过后续测试');
+            colorLog('red', '\n[FAIL] Node.js 依赖检查失败，跳过后续测试');
             showSummary();
             return;
         }
         
         const pythonOk = await checkPythonEnvironment();
         if (!pythonOk) {
-            colorLog('red', '\n❌ Python 环境检查失败，跳过后续测试');
+            colorLog('red', '\n[FAIL] Python 环境检查失败，跳过后续测试');
             showSummary();
             return;
         }
         
         const serviceOk = await checkServiceStatus();
         if (!serviceOk) {
-            colorLog('red', '\n❌ 服务状态检查失败，跳过后续测试');
+            colorLog('red', '\n[FAIL] 服务状态检查失败，跳过后续测试');
             showSummary();
             return;
         }
         
         const apiOk = await testBasicAPI();
         if (!apiOk) {
-            colorLog('red', '\n❌ 基础 API 测试失败，跳过 hCaptcha 测试');
+            colorLog('red', '\n[FAIL] 基础 API 测试失败，跳过 hCaptcha 测试');
             showSummary();
             return;
         }
@@ -537,7 +537,7 @@ async function runTests() {
         await testHcaptchaSolver();
         
     } catch (error) {
-        colorLog('red', `\n💥 测试过程中发生错误: ${error.message}`);
+        colorLog('red', `\n[ERROR] 测试过程中发生错误: ${error.message}`);
         recordTest('测试执行', false, error.message);
     }
     
@@ -547,7 +547,7 @@ async function runTests() {
 // 启动测试
 if (require.main === module) {
     runTests().catch(error => {
-        colorLog('red', `💥 测试启动失败: ${error.message}`);
+        colorLog('red', `[ERROR] 测试启动失败: ${error.message}`);
         process.exit(1);
     });
 }

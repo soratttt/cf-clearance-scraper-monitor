@@ -37,7 +37,7 @@ class SimpleRecaptchaV2Solver {
       const isAlreadySolved = await this._isCheckboxSolved(page);
       
       if (isAlreadySolved) {
-        console.log('✅ reCAPTCHA 自动通过验证');
+        console.log('[OK] reCAPTCHA 自动通过验证');
         const token = await this._getToken(page);
         if (token) {
           return {
@@ -64,7 +64,7 @@ class SimpleRecaptchaV2Solver {
       }
 
       const solveTime = Date.now() - startTime;
-      console.log(`✅ reCAPTCHA v2 解决成功 (${solveTime}ms)`);
+      console.log(`[OK] reCAPTCHA v2 解决成功 (${solveTime}ms)`);
 
       return {
         success: true,
@@ -75,7 +75,7 @@ class SimpleRecaptchaV2Solver {
 
     } catch (error) {
       const solveTime = Date.now() - startTime;
-      console.error(`❌ reCAPTCHA v2 解决失败 (${solveTime}ms):`, error.message);
+      console.error(`[FAIL] reCAPTCHA v2 解决失败 (${solveTime}ms):`, error.message);
       throw new RecaptchaSolveError(`Simple reCAPTCHA v2 solving failed: ${error.message}`);
     }
   }
@@ -84,27 +84,27 @@ class SimpleRecaptchaV2Solver {
    * 查找并点击 reCAPTCHA 复选框
    */
   async _clickCheckbox(page) {
-    console.log('🔍 查找 reCAPTCHA 复选框...');
+    console.log('[DEBUG] 查找 reCAPTCHA 复选框...');
 
     // 等待 reCAPTCHA iframe 加载
     try {
       await page.waitForSelector('iframe[src*="recaptcha"]', { timeout: 15000 });
     } catch (error) {
-      console.log('❌ 未找到 reCAPTCHA iframe');
+      console.log('[FAIL] 未找到 reCAPTCHA iframe');
       return false;
     }
 
     // 获取所有 iframe
     const frames = page.frames();
-    console.log(`📋 检测到 ${frames.length} 个框架`);
+    console.log(`[LIST] 检测到 ${frames.length} 个框架`);
 
     // 查找包含复选框的 iframe (anchor frame)
     for (const frame of frames) {
       const url = frame.url();
-      console.log(`🔍 检查框架: ${url}`);
+      console.log(`[DEBUG] 检查框架: ${url}`);
       
       if (url.includes('recaptcha') && url.includes('anchor')) {
-        console.log('✅ 找到 reCAPTCHA anchor 框架');
+        console.log('[OK] 找到 reCAPTCHA anchor 框架');
         
         try {
           // 等待复选框出现
@@ -112,11 +112,11 @@ class SimpleRecaptchaV2Solver {
           
           // 点击复选框
           await frame.click('#recaptcha-anchor');
-          console.log('✅ 成功点击复选框');
+          console.log('[OK] 成功点击复选框');
           
           return true;
         } catch (error) {
-          console.log(`❌ 点击复选框失败: ${error.message}`);
+          console.log(`[FAIL] 点击复选框失败: ${error.message}`);
           
           // 尝试其他可能的选择器
           const selectors = [
@@ -129,7 +129,7 @@ class SimpleRecaptchaV2Solver {
             try {
               await frame.waitForSelector(selector, { timeout: 5000 });
               await frame.click(selector);
-              console.log(`✅ 使用选择器 ${selector} 成功点击`);
+              console.log(`[OK] 使用选择器 ${selector} 成功点击`);
               return true;
             } catch (e) {
               continue;
@@ -139,7 +139,7 @@ class SimpleRecaptchaV2Solver {
       }
     }
 
-    console.log('❌ 未找到可点击的复选框');
+    console.log('[FAIL] 未找到可点击的复选框');
     return false;
   }
 
@@ -181,7 +181,7 @@ class SimpleRecaptchaV2Solver {
     let attempts = 0;
     while (attempts < this.maxAttempts) {
       attempts++;
-      console.log(`🎯 音频挑战尝试 ${attempts}/${this.maxAttempts}`);
+      console.log(`[TARGET] 音频挑战尝试 ${attempts}/${this.maxAttempts}`);
 
       try {
         // 1. 切换到音频挑战
@@ -208,18 +208,18 @@ class SimpleRecaptchaV2Solver {
         // 6. 检查是否成功
         const isSuccess = await this._isChallengeSolved(page);
         if (isSuccess) {
-          console.log('✅ 音频挑战解决成功');
+          console.log('[OK] 音频挑战解决成功');
           return true;
         }
 
-        console.log(`❌ 尝试 ${attempts} 失败，准备重试...`);
+        console.log(`[FAIL] 尝试 ${attempts} 失败，准备重试...`);
         if (attempts < this.maxAttempts) {
           await this._reloadChallenge(challengeFrame);
           await page.waitForTimeout(2000);
         }
 
       } catch (error) {
-        console.log(`❌ 音频挑战尝试 ${attempts} 出错: ${error.message}`);
+        console.log(`[FAIL] 音频挑战尝试 ${attempts} 出错: ${error.message}`);
         if (attempts >= this.maxAttempts) {
           throw error;
         }
@@ -238,12 +238,12 @@ class SimpleRecaptchaV2Solver {
     for (const frame of frames) {
       const url = frame.url();
       if (url.includes('recaptcha') && (url.includes('bframe') || url.includes('challenge'))) {
-        console.log(`✅ 找到挑战框架: ${url}`);
+        console.log(`[OK] 找到挑战框架: ${url}`);
         return frame;
       }
     }
     
-    console.log('❌ 未找到挑战框架');
+    console.log('[FAIL] 未找到挑战框架');
     return null;
   }
 
@@ -251,7 +251,7 @@ class SimpleRecaptchaV2Solver {
    * 切换到音频挑战
    */
   async _switchToAudioChallenge(frame) {
-    console.log('🔄 切换到音频挑战...');
+    console.log('[RESTART] 切换到音频挑战...');
     
     const audioSelectors = [
       '#recaptcha-audio-button',
@@ -264,7 +264,7 @@ class SimpleRecaptchaV2Solver {
       try {
         await frame.waitForSelector(selector, { timeout: 5000 });
         await frame.click(selector);
-        console.log(`✅ 使用选择器 ${selector} 切换到音频`);
+        console.log(`[OK] 使用选择器 ${selector} 切换到音频`);
         await frame.waitForTimeout(2000);
         return;
       } catch (error) {
@@ -279,7 +279,7 @@ class SimpleRecaptchaV2Solver {
    * 获取音频 URL
    */
   async _getAudioUrl(frame) {
-    console.log('🔍 获取音频 URL...');
+    console.log('[DEBUG] 获取音频 URL...');
     
     const audioSelectors = [
       '#audio-source',
@@ -296,7 +296,7 @@ class SimpleRecaptchaV2Solver {
         if (element) {
           const href = await element.getAttribute('href') || await element.getAttribute('src');
           if (href && href.includes('.mp3')) {
-            console.log(`✅ 找到音频 URL: ${href}`);
+            console.log(`[OK] 找到音频 URL: ${href}`);
             return href;
           }
         }
@@ -329,7 +329,7 @@ class SimpleRecaptchaV2Solver {
       // 语音识别
       const transcription = await this.audioProcessor.transcribeAudio(wavBuffer, language);
       
-      console.log(`✅ 音频处理完成: "${transcription}"`);
+      console.log(`[OK] 音频处理完成: "${transcription}"`);
       return transcription;
 
     } catch (error) {
@@ -355,7 +355,7 @@ class SimpleRecaptchaV2Solver {
       try {
         await frame.waitForSelector(selector, { timeout: 5000 });
         await frame.fill(selector, text);
-        console.log(`✅ 使用选择器 ${selector} 填入文本`);
+        console.log(`[OK] 使用选择器 ${selector} 填入文本`);
         break;
       } catch (error) {
         continue;
@@ -373,7 +373,7 @@ class SimpleRecaptchaV2Solver {
       try {
         await frame.waitForSelector(selector, { timeout: 5000 });
         await frame.click(selector);
-        console.log(`✅ 使用选择器 ${selector} 提交`);
+        console.log(`[OK] 使用选择器 ${selector} 提交`);
         return;
       } catch (error) {
         continue;
@@ -394,7 +394,7 @@ class SimpleRecaptchaV2Solver {
    * 重新加载挑战
    */
   async _reloadChallenge(frame) {
-    console.log('🔄 重新加载挑战...');
+    console.log('[RESTART] 重新加载挑战...');
     
     const reloadSelectors = [
       '#recaptcha-reload-button',
@@ -406,7 +406,7 @@ class SimpleRecaptchaV2Solver {
       try {
         await frame.waitForSelector(selector, { timeout: 3000 });
         await frame.click(selector);
-        console.log(`✅ 使用选择器 ${selector} 重新加载`);
+        console.log(`[OK] 使用选择器 ${selector} 重新加载`);
         return;
       } catch (error) {
         continue;
@@ -442,7 +442,7 @@ class SimpleRecaptchaV2Solver {
       try {
         const token = await method();
         if (token && token.length > 50) {
-          console.log(`✅ 获取到 token (长度: ${token.length})`);
+          console.log(`[OK] 获取到 token (长度: ${token.length})`);
           return token;
         }
       } catch (e) {
@@ -450,7 +450,7 @@ class SimpleRecaptchaV2Solver {
       }
     }
 
-    console.log('❌ 未获取到有效 token');
+    console.log('[FAIL] 未获取到有效 token');
     return null;
   }
 }
