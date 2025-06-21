@@ -156,14 +156,21 @@ function callHcaptchaSolver(params) {
     return new Promise((resolve) => {
         const solverDir = path.join(__dirname);
         const solverPath = path.join(solverDir, 'solver.py');
+        
+        // 优先使用环境变量指定的Python路径，然后使用本机Python
+        const pythonCommand = process.env.HCAPTCHA_PYTHON_PATH || 
+                             process.env.PYTHON_PATH || 
+                             (process.platform === 'win32' ? 'python' : 'python3');
+        
+        // 可选：如果用户仍想使用虚拟环境，检查venv路径
         const venvPythonPath = path.join(solverDir, 'venv', 
             process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
-        
-        // 使用虚拟环境的 Python，如果不存在则使用系统 Python
-        const pythonCommand = fs.existsSync(venvPythonPath) ? venvPythonPath : 'python3';
+        const finalPythonCommand = process.env.USE_VENV === 'true' && fs.existsSync(venvPythonPath) 
+            ? venvPythonPath 
+            : pythonCommand;
         const paramsJson = JSON.stringify(params);
         
-        console.log(`🔧 Python命令: ${pythonCommand}`);
+        console.log(`🔧 Python命令: ${finalPythonCommand}`);
         console.log(`📁 解决器路径: ${solverPath}`);
         console.log(`📄 参数JSON: ${paramsJson}`);
 
@@ -171,7 +178,7 @@ function callHcaptchaSolver(params) {
         console.log(`🚀 启动Python进程: ${new Date().toISOString()}`);
         const devNull = fs.openSync('/dev/null', 'w');
         
-        const pythonProcess = spawn(pythonCommand, [solverPath, paramsJson], {
+        const pythonProcess = spawn(finalPythonCommand, [solverPath, paramsJson], {
             stdio: ['pipe', 'pipe', devNull], // 重定向stderr到/dev/null
             cwd: solverDir,
             env: { 

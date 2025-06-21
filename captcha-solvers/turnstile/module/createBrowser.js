@@ -89,6 +89,20 @@ async function createBrowser(options = {}) {
                         const pages = await context.pages();
                         await Promise.all(pages.map(page => page.close().catch(() => {})));
                         
+                        // 清除所有cookie以确保等待的请求获得全新的上下文
+                        try {
+                            const blankPage = await context.newPage();
+                            await blankPage.goto('about:blank');
+                            const cookies = await blankPage.cookies();
+                            if (cookies.length > 0) {
+                                await blankPage.deleteCookie(...cookies);
+                            }
+                            await blankPage.close();
+                            console.log(`🧹 Cleared ${cookies.length} cookies for waiting request`);
+                        } catch (cookieError) {
+                            console.error("Error clearing cookies for waiting request:", cookieError.message);
+                        }
+                        
                         const waitingRequest = this.waitingQueue.shift();
                         clearTimeout(waitingRequest.timeout);
                         
@@ -138,6 +152,20 @@ async function createBrowser(options = {}) {
                     // 清理页面但保留上下文
                     const pages = await context.pages();
                     await Promise.all(pages.map(page => page.close().catch(() => {})));
+                    
+                    // 清除所有cookie以确保每次请求都是全新的
+                    try {
+                        const blankPage = await context.newPage();
+                        await blankPage.goto('about:blank');
+                        const cookies = await blankPage.cookies();
+                        if (cookies.length > 0) {
+                            await blankPage.deleteCookie(...cookies);
+                        }
+                        await blankPage.close();
+                        console.log(`🧹 Cleared ${cookies.length} cookies from context`);
+                    } catch (cookieError) {
+                        console.error("Error clearing cookies:", cookieError.message);
+                    }
                     
                     this.available.push(context);
                     console.log(`♻️  Context returned to pool (usage: ${usage}, ${this.used} active, ${this.available.length} available)`);

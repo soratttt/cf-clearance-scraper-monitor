@@ -90,57 +90,199 @@ else
     npm ci || npm install
 fi
 
-# 安装Python环境
-echo -e "${YELLOW}[5/8] 安装Python环境...${NC}"
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 未安装，正在通过 Homebrew 安装..."
-    brew install python
-    if [ $? -ne 0 ]; then
-        echo -e "${YELLOW}警告: Python3 安装失败，但可以继续运行（仅影响hCaptcha功能）${NC}"
-    fi
-else
-    echo "✓ Python3 已安装 (版本: $(python3 --version))"
-fi
+# 检测和安装Python环境
+echo -e "${YELLOW}[5/8] 检测和安装Python环境...${NC}"
 
-# 安装hCaptcha依赖
-echo -e "${YELLOW}[6/8] 安装hCaptcha依赖...${NC}"
-HCAPTCHA_DIR="captcha-solvers/hcaptcha"
-if [ -d "$HCAPTCHA_DIR" ] && command -v python3 &> /dev/null; then
-    cd "$HCAPTCHA_DIR"
-    
-    # 检查是否已经存在虚拟环境
-    if [ ! -d "venv" ]; then
-        echo "创建 Python 虚拟环境..."
-        python3 -m venv venv
-        if [ $? -ne 0 ]; then
-            echo -e "${YELLOW}警告: 虚拟环境创建失败，将使用系统 Python${NC}"
-            cd "$SCRIPT_DIR"
-        else
-            # 激活虚拟环境并安装依赖
-            source venv/bin/activate
-            echo "安装 hCaptcha 依赖包..."
-            pip install --upgrade pip &> /dev/null
-            pip install -e hcaptcha-challenger/ &> /dev/null
-            if [ $? -eq 0 ]; then
-                echo "安装 Playwright 浏览器..."
-                playwright install chromium &> /dev/null
-                if [ $? -eq 0 ]; then
-                    echo "✓ hCaptcha 依赖安装完成"
-                else
-                    echo -e "${YELLOW}警告: Playwright 浏览器安装失败${NC}"
-                fi
+# 函数：比较版本号
+version_gt() {
+    test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+}
+
+# 检查Python版本
+check_python_version() {
+    if command -v python3 &> /dev/null; then
+        CURRENT_PYTHON_VERSION=$(python3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        if [ -n "$CURRENT_PYTHON_VERSION" ]; then
+            echo "当前Python版本: $CURRENT_PYTHON_VERSION"
+            if version_gt "3.10.0" "$CURRENT_PYTHON_VERSION"; then
+                echo "⚠️  Python版本过低 (需要 3.10+)，需要升级"
+                return 1
             else
-                echo -e "${YELLOW}警告: hCaptcha 依赖安装失败${NC}"
+                echo "✓ Python版本符合要求 (版本: $CURRENT_PYTHON_VERSION)"
+                return 0
             fi
-            deactivate
-            cd "$SCRIPT_DIR"
+        fi
+    fi
+    echo "Python3 未安装或版本检测失败"
+    return 1
+}
+
+# 安装或升级Python
+install_upgrade_python() {
+    echo "正在安装/升级Python到最新版本..."
+    
+    # 首先确保Homebrew可用
+    if ! command -v brew &> /dev/null; then
+        echo -e "${RED}错误: 需要先安装Homebrew${NC}"
+        return 1
+    fi
+    
+    # 更新Homebrew
+    echo "更新Homebrew..."
+    brew update &> /dev/null || echo "Homebrew更新失败，继续安装"
+    
+    # 安装最新版Python
+    echo "安装最新版Python..."
+    if brew install python@3.12 &> /dev/null; then
+        echo "✓ Python 3.12 安装成功"
+        
+        # 创建软链接确保python3指向最新版本
+        PYTHON_NEW_PATH="/opt/homebrew/bin/python3.12"
+        if [ ! -f "$PYTHON_NEW_PATH" ]; then
+            PYTHON_NEW_PATH="/usr/local/bin/python3.12"
+        fi
+        
+        if [ -f "$PYTHON_NEW_PATH" ]; then
+            # 更新PATH，优先使用新安装的Python
+            export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+            
+            # 验证安装
+            if command -v python3 &> /dev/null; then
+                NEW_VERSION=$(python3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+                echo "✓ Python已更新到版本: $NEW_VERSION"
+                return 0
+            fi
+        fi
+    fi
+    
+    # 如果3.12失败，尝试3.11
+    echo "尝试安装Python 3.11..."
+    if brew install python@3.11 &> /dev/null; then
+        echo "✓ Python 3.11 安装成功"
+        export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+        return 0
+    fi
+    
+    # 最后尝试默认python
+    echo "尝试安装默认Python..."
+    if brew install python &> /dev/null; then
+        echo "✓ Python 安装成功"
+        export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+        return 0
+    fi
+    
+    echo -e "${RED}Python安装失败${NC}"
+    return 1
+}
+
+# 执行Python检查和安装
+if ! check_python_version; then
+    echo "需要安装或升级Python..."
+    if install_upgrade_python; then
+        echo "验证Python安装..."
+        if check_python_version; then
+            echo "✓ Python环境配置完成"
+        else
+            echo -e "${YELLOW}警告: Python版本仍不符合要求，但继续安装（可能影响hCaptcha功能）${NC}"
         fi
     else
-        echo "✓ hCaptcha 虚拟环境已存在"
-        cd "$SCRIPT_DIR"
+        echo -e "${YELLOW}警告: Python安装失败，继续安装（将影响hCaptcha功能）${NC}"
     fi
+fi
+
+# 安装Python验证码解决器依赖
+echo -e "${YELLOW}[6/8] 安装Python验证码解决器依赖...${NC}"
+
+# 检查统一依赖文件
+CAPTCHA_SOLVERS_DIR="captcha-solvers"
+UNIFIED_REQUIREMENTS="$CAPTCHA_SOLVERS_DIR/requirements.txt"
+
+if command -v python3 &> /dev/null; then
+    echo "开始安装统一的Python依赖..."
+    
+    # 升级pip
+    echo "升级pip..."
+    pip3 install --user --upgrade pip &> /dev/null
+    
+    # 安装统一依赖
+    if [ -f "$UNIFIED_REQUIREMENTS" ]; then
+        echo "从统一依赖文件安装包..."
+        pip3 install --user -r "$UNIFIED_REQUIREMENTS" &> /dev/null
+        if [ $? -eq 0 ]; then
+            echo "✓ 统一依赖安装成功"
+            DEPS_INSTALLED=true
+        else
+            echo -e "${YELLOW}警告: 统一依赖安装失败，尝试逐个安装...${NC}"
+            DEPS_INSTALLED=false
+        fi
+    else
+        echo -e "${YELLOW}未找到统一依赖文件，尝试手动安装核心包...${NC}"
+        DEPS_INSTALLED=false
+    fi
+    
+    # 如果统一安装失败，尝试手动安装核心包
+    if [ "$DEPS_INSTALLED" = false ]; then
+        echo "手动安装核心依赖包..."
+        
+        # hCaptcha 核心依赖
+        echo "安装hCaptcha依赖..."
+        pip3 install --user hcaptcha-challenger google-genai playwright opencv-python numpy pillow httpx loguru pydantic-settings &> /dev/null
+        
+        # reCaptcha 核心依赖
+        echo "安装reCaptcha依赖..."
+        pip3 install --user DrissionPage pydub SpeechRecognition &> /dev/null
+        
+        # 通用依赖
+        echo "安装通用依赖..."
+        pip3 install --user python-dotenv pathlib2 &> /dev/null
+        
+        if [ $? -eq 0 ]; then
+            echo "✓ 核心依赖手动安装完成"
+        else
+            echo -e "${YELLOW}警告: 部分依赖安装失败${NC}"
+        fi
+    fi
+    
+    # 安装 Playwright 浏览器
+    echo "安装Playwright浏览器..."
+    python3 -m playwright install chromium &> /dev/null
+    if [ $? -eq 0 ]; then
+        echo "✓ Playwright浏览器安装完成"
+    else
+        echo -e "${YELLOW}警告: Playwright浏览器安装失败${NC}"
+    fi
+    
+    # 测试关键包导入
+    echo "测试依赖包导入..."
+    python3 -c "
+import sys
+packages = [
+    ('hcaptcha_challenger', 'hCaptcha Challenger'),
+    ('DrissionPage', 'DrissionPage (reCAPTCHA)'),
+    ('playwright', 'Playwright'),
+    ('cv2', 'OpenCV'),
+    ('pydub', 'PyDub (reCAPTCHA)'),
+    ('speech_recognition', 'SpeechRecognition (reCAPTCHA)')
+]
+
+success_count = 0
+for package, name in packages:
+    try:
+        __import__(package)
+        print(f'  ✓ {name}')
+        success_count += 1
+    except ImportError:
+        print(f'  ⚠️ {name}: 导入失败')
+
+print(f'📊 导入结果: {success_count}/{len(packages)} 成功')
+if success_count >= 4:
+    print('✅ 核心验证码解决器可用')
+else:
+    print('⚠️ 部分验证码功能可能不可用')
+"
+    
 else
-    echo -e "${YELLOW}警告: 跳过 hCaptcha 安装（Python3 不可用或目录不存在）${NC}"
+    echo -e "${YELLOW}警告: Python3不可用，跳过验证码解决器安装${NC}"
 fi
 
 # 检查防火墙设置

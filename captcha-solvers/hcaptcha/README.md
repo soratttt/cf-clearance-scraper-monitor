@@ -1,15 +1,127 @@
-<div align="center">
-    <h1> hCaptcha Challenger</h1>
-    <p>🚀 Gracefully face hCaptcha challenge with multimodal large language model.</p>
-    <img src="https://img.shields.io/pypi/v/hcaptcha-challenger?style=flat-square&logo=python&logoColor=white">
-    <img src="https://img.shields.io/pypi/dw/hcaptcha-challenger?style=flat-square&logo=aiqfome&label=downloads%40PyPI">
-    <a href="https://github.com/QIN2DIM/hcaptcha-challenger/releases"><img src="https://img.shields.io/github/downloads/QIN2DIM/hcaptcha-challenger/model/total?style=flat-square&logo=github"></a>
-	<br>
-	<a href="https://discord.gg/m9ZRBTZvbr"><img alt="Discord" src="https://img.shields.io/discord/978108215499816980?style=social&logo=discord&label=echosec"></a>
- 	<a href = "https://t.me/+Cn-KBOTCaWNmNGNh"><img src="https://img.shields.io/static/v1?style=social&logo=telegram&label=chat&message=studio" ></a>
-	<br>
-	<br>
-</div>
+# hCaptcha 解决器
+
+🚀 基于 hcaptcha-challenger 的强大 hCaptcha 解决方案，使用本机环境安装，简化部署流程。
+
+## 特点
+
+✅ **简化安装** - 无需虚拟环境，直接使用本机Python  
+✅ **智能切换** - 支持本机环境和虚拟环境灵活切换  
+✅ **AI驱动** - 基于多模态大语言模型的验证码解决  
+✅ **环境变量配置** - 统一的配置管理
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+# 运行自动安装脚本
+python3 install_dependencies.py
+```
+
+### 2. 配置环境变量
+
+```bash
+# 复制环境变量模板
+cp ../../.env.example ../../.env
+
+# 编辑配置文件，添加你的 Gemini API 密钥
+nano ../../.env
+```
+
+在 `.env` 文件中配置：
+```bash
+# 必需：Gemini API 密钥
+GEMINI_API_KEY=your_actual_gemini_api_key_here
+
+# 可选：多个API密钥（逗号分隔，随机选择）
+GEMINI_API_KEYS=key1,key2,key3
+
+# 可选：自定义Python路径
+HCAPTCHA_PYTHON_PATH=/usr/bin/python3
+```
+
+### 3. 测试配置
+
+```bash
+python3 test_config.py
+```
+
+## 环境变量配置
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `HCAPTCHA_PYTHON_PATH` | 指定Python路径 | `python3`/`python` |
+| `USE_VENV` | 是否使用虚拟环境 | `false` |
+| `PYTHON_LOG_LEVEL` | Python日志级别 | `CRITICAL` |
+| `HCAPTCHA_SOLVER_TIMEOUT` | 解决超时时间(ms) | `300000` |
+| `HCAPTCHA_PAGE_TIMEOUT` | 页面加载超时(ms) | `30000` |
+
+## 使用方式
+
+### API调用示例
+
+```javascript
+POST /solve-hcaptcha
+Content-Type: application/json
+
+{
+  "type": "hcaptcha",
+  "websiteUrl": "https://example.com",
+  "websiteKey": "your-site-key",
+  "proxy": "host:port:username:password" // 可选
+}
+```
+
+### 响应示例
+
+```javascript
+{
+  "code": 200,
+  "message": "hCaptcha solved successfully",
+  "token": "P1_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+## 故障排除
+
+### 1. Python包安装失败
+```bash
+# 升级pip
+python3 -m pip install --upgrade pip
+
+# 逐个安装失败的包
+python3 -m pip install hcaptcha-challenger
+python3 -m pip install playwright
+playwright install chromium
+```
+
+### 2. 指定Python版本
+```bash
+# 在环境变量中指定
+export HCAPTCHA_PYTHON_PATH=/usr/bin/python3.11
+
+# 或在.env文件中设置
+HCAPTCHA_PYTHON_PATH=/usr/bin/python3.11
+```
+
+### 3. 使用虚拟环境（可选）
+```bash
+# 设置环境变量强制使用虚拟环境
+export USE_VENV=true
+
+# 或创建虚拟环境
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+python3 install_dependencies.py
+```
+
+## 技术架构
+
+- **Node.js 接口** - 统一的RESTful API
+- **Python解决器** - 基于hcaptcha-challenger的AI解决方案
+- **本机环境优先** - 简化部署，减少环境问题
+- **配置驱动** - 灵活的环境变量控制
 
 
 ![hcaptcha-challenger-demo](https://github.com/QIN2DIM/img_pool/blob/main/img/hcaptcha-challenger3.gif)
