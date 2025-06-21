@@ -82,18 +82,18 @@ const RecaptchaV3Solver = require('../captcha-solvers/recaptcha/recaptchav3/inde
 
 
 // 统一验证码处理接口 - 根路径
+// 统一验证码处理接口 - 根路径
 app.post('/', async (req, res) => {
     try {
         const { type } = req.body;
-
         if (!type) {
             return res.status(400).json({
                 code: 400,
-                message: 'Missing required parameter: type. Supported types: cftoken, hcaptcha, cfcookie, recaptchav2, recaptchav3',
+                message: 'Missing required parameter: type. Supported types: cftoken, hcaptcha, cfcookie, recaptchav2, recaptchav3, wafsession',
                 token: null
             });
         }
-
+        
         switch (type.toLowerCase()) {
             case 'cftoken':
                 return await handleCftokenRequest(req, res);
@@ -110,10 +110,13 @@ app.post('/', async (req, res) => {
             case 'recaptchav3':
                 return await handleRecaptchaV3Request(req, res);
             
+            case 'wafsession':
+                return await handleWafSessionRequest(req, res);
+            
             default:
                 return res.status(400).json({
                     code: 400,
-                    message: `Unsupported type: ${type}. Supported types: cftoken, hcaptcha, cfcookie, recaptchav2, recaptchav3`,
+                    message: `Unsupported type: ${type}. Supported types: cftoken, hcaptcha, cfcookie, recaptchav2, recaptchav3, wafsession`,
                     token: null
                 });
         }
@@ -127,6 +130,33 @@ app.post('/', async (req, res) => {
     }
 })
 
+// 处理 WAF Session 请求
+async function handleWafSessionRequest(req, res) {
+    const data = req.body;
+    
+    // 参数验证
+    if (!data.websiteUrl) {
+        return res.status(400).json({ 
+            code: 400, 
+            message: 'websiteUrl is required',
+            token: null 
+        });
+    }
+    
+    // 转换为内部格式
+    const internalData = {
+        url: data.websiteUrl,
+        mode: 'waf-session',
+        authToken: data.authToken,
+        // 可选参数
+        proxy: data.proxy,
+        userAgent: data.userAgent,
+        timeout: data.timeout
+    };
+    
+    // 处理请求
+    return handleClearanceRequest(req, res, internalData);
+}
 // 处理 reCAPTCHA v2 求解 (使用 Python 实现)
 async function handleRecaptchaV2Solve(data) {
     try {
