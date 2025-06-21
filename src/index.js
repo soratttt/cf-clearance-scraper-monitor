@@ -110,7 +110,7 @@ app.post('/', async (req, res) => {
             case 'recaptchav3':
                 return await handleRecaptchaV3Request(req, res);
             
-            case 'wafsession':
+            case 'waf-session':
                 return await handleWafSessionRequest(req, res);
             
             default:
