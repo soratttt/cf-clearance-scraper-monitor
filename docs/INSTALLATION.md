@@ -65,6 +65,14 @@ venv\Scripts\activate
 # 安装依赖
 pip install -e hcaptcha-challenger/
 
+pip install playwright
+
+# Add the location of user-installed tools to your PATH for this session
+export PATH="$PATH:$HOME/.local/bin"
+
+# Save this PATH setting to your startup file so it's permanent
+echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+
 # 安装Playwright浏览器
 playwright install chromium
 ```
