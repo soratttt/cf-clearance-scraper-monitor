@@ -35,8 +35,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/0xsongsu/cf-clearance-scraper.git
-cd cf-clearance-scraper
+git clone https://github.com/soratttt/cf-clearance-scraper-monitor.git
+cd cf-clearance-scraper-monitor
 
 # 安装依赖
 npm install
@@ -73,8 +73,8 @@ playwright install chromium
 
 ```bash
 # 克隆仓库
-git clone https://github.com/0xsongsu/cf-clearance-scraper.git
-cd cf-clearance-scraper
+git clone https://github.com/soratttt/cf-clearance-scraper-monitor.git
+cd cf-clearance-scraper-monitor
 
 # 使用Docker Compose启动
 docker-compose up -d
