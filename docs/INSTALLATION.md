@@ -77,6 +77,10 @@ echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 playwright install chromium
 ```
 
+sudo apt install google-chrome-stable
+echo 'export CHROME_PATH=/usr/bin/google-chrome-stable' >> ~/.bashrc
+source ~/.bashrc
+
 ### Docker 安装
 
 ```bash
